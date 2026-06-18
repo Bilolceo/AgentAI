@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import (
     build_streaming_stt_session_service,
+    build_streaming_turn_service,
     build_telephony_intake_service,
     build_telephony_stream_service,
     build_twilio_telephony_service,
@@ -30,6 +31,7 @@ from app.services.telephony.provider import (
 from app.services.telephony.stream import TelephonyStreamError, decode_media_payload
 from app.services.telephony.twilio import TwilioTelephonyProvider
 from app.services.voice.streaming_stt import StreamingAudioFrame
+from app.services.voice.streaming_turn import StreamingTurnManager
 
 router = APIRouter()
 log = get_logger("telephony")
@@ -197,24 +199,45 @@ async def twilio_media_stream(
 
     Parses connected/start/media/stop JSON events and counts frames/bytes. When
     TWILIO_USE_MEDIA_STREAMS and STREAMING_STT_ENABLED are both on, media frames
-    are also fed to a (mock) StreamingSTTSessionService and a safe transcript
-    summary is attached to the stream on stop/disconnect. Raw audio payloads are
-    NEVER logged or stored. No streaming AI/TTS, no barge-in. Malformed events
-    close the socket safely.
+    are also fed to a (mock) StreamingSTTSessionService. A FINAL transcript is
+    routed once through the full AI/safety pipeline (CallSessionService) and the
+    safe turn result is attached to the stream; partials never call the AI. This
+    is a TEXT turn only: no streaming TTS, no audio is sent back, no barge-in. Raw
+    audio payloads are NEVER logged or stored. Malformed events close safely.
     """
     await websocket.accept()
     svc = build_telephony_stream_service(session)
     streaming_on = settings.streaming_stt_enabled and settings.twilio_use_media_streams
+    turns_on = streaming_on and settings.streaming_stt_ai_turns_enabled
     stream = None
     stt = None  # StreamingSTTSessionService, only when streaming_on
+    turns = None  # StreamingTurnManager, only when turns_on + a call session is linked
     frames = 0
+    stopped = False  # local guard (avoids reading possibly-expired stream.status)
+
+    async def _run_finals(events) -> bool:
+        # Only FINAL transcripts trigger an AI turn; partials are ignored here.
+        # Returns True if at least one final was routed (a turn may have rolled the
+        # session back, so the caller re-binds its stream reference afterwards).
+        if turns is None:
+            return False
+        ran = False
+        for ev in events:
+            if ev.is_final:
+                await turns.on_final(ev)
+                ran = True
+        return ran
 
     async def _finalize(reason: str) -> None:
         if stt is None or stream is None:
             return
-        await stt.finish()
-        # Summary holds counts + recognized text only; never raw audio/base64.
-        await svc.attach_streaming_summary(stream, stt.summary(stopped_reason=reason))
+        final_events = await stt.finish()
+        await _run_finals(final_events)
+        # Summary holds counts + recognized text (+ AI turns); never raw audio/base64.
+        summary = stt.summary(stopped_reason=reason)
+        if turns is not None:
+            summary.update(turns.summary())
+        await svc.attach_streaming_summary(stream, summary)
 
     try:
         while True:
@@ -241,6 +264,7 @@ async def twilio_media_stream(
                 if stream is not None:
                     await _finalize("superseded")
                     await svc.stop_stream(stream)
+                    stopped = True
                     await websocket.close(code=_WS_POLICY)
                     return
                 # Authenticate BEFORE creating any TelephonyStream row: validate the
@@ -262,6 +286,16 @@ async def twilio_media_stream(
                         call_sid=stream.provider_call_id,
                         params=params if isinstance(params, dict) else {},
                     )
+                    # Wire AI turns only when a CallSession is linked to this stream.
+                    if turns_on:
+                        call_session_id = await svc.resolve_call_session_id(stream)
+                        if call_session_id is not None:
+                            turns = StreamingTurnManager(
+                                build_streaming_turn_service(session),
+                                call_session_id=call_session_id,
+                                stream_id=stream.id,
+                                max_turns=settings.streaming_stt_max_turns,
+                            )
                 # Do NOT log payloads or the token; only safe identifiers.
                 log.info("twilio_stream_started", stream_sid=stream.stream_sid)
             elif kind == "media":
@@ -276,23 +310,33 @@ async def twilio_media_stream(
                     await svc.record_media_frame(stream, event, decoded=decoded)
                     frames += 1
                     if stt is not None:
-                        # Partial/final events are collected; we do NOT call AI here.
-                        await stt.push_frame(_build_audio_frame(event, stream, decoded or b""))
+                        # A FINAL transcript routes through the AI/safety pipeline;
+                        # partials do not. The push returns the new partial/final events.
+                        events = await stt.push_frame(
+                            _build_audio_frame(event, stream, decoded or b"")
+                        )
+                        if await _run_finals(events):
+                            # A turn may have rolled the session back (expiring the
+                            # stream); re-bind so later frames/finalize stay valid.
+                            stream = await svc.ensure_live(stream)
                         if stt.over_limit:
                             await _finalize("over_limit")
                             await svc.stop_stream(stream)
+                            stopped = True
                             await websocket.close(code=1000)
                             return
             elif kind == "stop":
                 if stream is not None:
                     await _finalize("stop_event")
                     await svc.stop_stream(stream)
+                    stopped = True
                 await websocket.close(code=1000)
                 return
             # "mark" and unknown events are ignored.
     finally:
         # If the socket dropped mid-stream, finalize streaming + mark it stopped.
-        if stream is not None and stream.status != "stopped":
+        # Use the local `stopped` flag (never read a possibly-expired stream.status).
+        if stream is not None and not stopped:
             await _finalize("disconnect")
             await svc.stop_stream(stream)
         log.info("twilio_stream_closed", frames=frames)

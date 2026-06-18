@@ -4,8 +4,12 @@ This adds a STREAMING speech-to-text architecture on top of the Twilio Media
 Streams WebSocket spike. It is ARCHITECTURE + a deterministic MOCK provider only:
 - no real speech recognition (the mock does not decode audio),
 - no real/paid streaming STT provider (Azure/Deepgram/OpenAI realtime) yet,
-- no streaming TTS back to the caller, no barge-in, no AI turn wired into the
-  stream.
+- no streaming TTS back to the caller and no audio is sent back, no barge-in.
+
+A FINAL transcript IS now routed once through the full AI/safety pipeline and the
+safe AI turn is persisted (see "Streaming AI turns" below). Partial transcripts
+never call the AI. This produces a TEXT turn only - there is still NO streaming
+TTS / audio playback.
 
 The non-streaming Twilio Gather/SpeechResult flow, mock telephony, and
 `/voice/simulate` are all unchanged.
@@ -15,7 +19,8 @@ The non-streaming Twilio Gather/SpeechResult flow, mock telephony, and
   timestamp_ms, payload_bytes (decoded audio, transient - never logged/persisted),
   codec (default `audio/x-mulaw`), track.
 - `TranscriptEvent` (dataclass): text, language, is_final, provider, confidence
-  (nullable), timestamp_ms (nullable), metadata (safe dict).
+  (nullable), timestamp_ms (nullable), metadata (safe dict), `event_id` (nullable;
+  a stable, unique id per FINAL event used for dedup - see the provider contract).
 - `StreamingSTTProvider` (interface): `start_stream(context) -> StreamingSTTSession`.
 - `StreamingSTTSession` (interface): `accept_audio_frame(frame) -> [TranscriptEvent]`,
   `finish_stream() -> [TranscriptEvent]`, `close()`.
@@ -27,6 +32,63 @@ The non-streaming Twilio Gather/SpeechResult flow, mock telephony, and
   enforces memory limits, tracks partial/final transcripts, handles provider
   errors safely (marks the session `degraded`, never crashes), and builds a SAFE
   `summary()`.
+
+## Streaming AI turns (final transcript -> AI text turn)
+When `STREAMING_STT_AI_TURNS_ENABLED` is on and a CallSession is linked to the
+stream (via the TelephonyCall created at `/twilio/voice`), each FINAL transcript
+is routed once through `CallSessionService.handle_message` - the SAME path the
+text simulation and the Twilio Gather flow use. So every safety guarantee is
+preserved end to end:
+- pre-LLM medical guard (diagnosis/medicine/dosage/treatment/emergency),
+- KB grounding + anti-hallucination (factual question with no KB data -> operator),
+- post-LLM output reviewer (defense-in-depth),
+- operator-transfer decision (priority, callback).
+
+Rules and limits:
+- partials NEVER call the AI; only a FINAL transcript does;
+- a RE-DELIVERY of the same final event (same `event_id`) does NOT double-call the
+  AI; but two SEPARATE utterances that share the same text each create their own
+  turn (dedup is by `event_id`, never by text);
+- transcript text is capped to `STREAMING_STT_MAX_TRANSCRIPT_CHARS` per turn;
+- at most `STREAMING_STT_MAX_TURNS` turns per stream (then further finals are
+  ignored and `turns_over_limit` is set), bounding metadata growth;
+- if the AI/pipeline errors, the turn is marked `degraded` and the WebSocket does
+  NOT crash;
+- a safety transfer/emergency persists the correct `action`/`reason_code` and the
+  official 103 message - never unsafe medical advice.
+
+Provider contract: a real `StreamingSTTProvider` MUST set a stable, unique
+`event_id` on every FINAL `TranscriptEvent` (a monotonic per-stream index or the
+recognizer's final id). The mock does this as `"{stream_sid}:final:{n}"`. If a
+provider omits `event_id`, the turn layer falls back conservatively to object
+identity - it only suppresses the exact same event object delivered twice and
+will otherwise treat each final as a new turn (it never dedups by text).
+
+Each turn (stored under `streaming_stt.turns`) holds ONLY safe text:
+`order`, `transcript_text`, `transcript_language`, `transcript_confidence`,
+`transcript_truncated`, `ai_text`, `action`, `reason_code`, `transferred`,
+`transfer_reason`, `priority`, `callback_required`, `language`, `sources`
+([{id,title}]), `created_at`, `degraded`, `error`. No raw audio/base64, no secrets
+or provider payloads. The AI text is produced but NOT synthesized or sent back.
+
+Sample `stream_metadata.streaming_stt` after one emergency final:
+
+    {
+      "provider": "mock", "frames_processed": 2, "bytes_processed": 320,
+      "partial_count": 1, "final_count": 1,
+      "final_transcripts": [{"text": "Nafas ololmayapman", "language": "uz-UZ", "confidence": 0.9}],
+      "stopped_reason": "stop_event", "errors": 0, "degraded": false, "over_limit": false,
+      "turn_count": 1, "turns_over_limit": false,
+      "turns": [{
+        "order": 0, "transcript_text": "Nafas ololmayapman", "transcript_language": "uz-UZ",
+        "transcript_confidence": 0.9, "transcript_truncated": false,
+        "ai_text": "Bu holat shoshilinch tibbiy yordam talab qilishi mumkin. Iltimos, darhol 103 ...",
+        "action": "emergency", "reason_code": "emergency", "transferred": true,
+        "transfer_reason": "emergency", "priority": "urgent", "callback_required": false,
+        "language": "uz-UZ", "sources": [], "created_at": "2026-06-18T...Z",
+        "degraded": false, "error": null
+      }]
+    }
 
 ## Summary (attached to TelephonyStream.stream_metadata.streaming_stt)
 Counts + recognized transcript TEXT only - NEVER raw audio or any base64 payload:
@@ -68,6 +130,10 @@ the earlier counting-only spike):
 - `STREAMING_STT_MAX_BYTES` (default 8000000) - per-stream byte cap.
 - `STREAMING_STT_FINAL_AFTER_FRAMES` (default 25) - mock: emit the final after N
   frames (set small for local tests).
+- `STREAMING_STT_AI_TURNS_ENABLED` (default true) - run an AI text turn on each
+  final transcript (text only; no streaming TTS).
+- `STREAMING_STT_MAX_TURNS` (default 50) - per-stream AI-turn cap.
+- `STREAMING_STT_MAX_TRANSCRIPT_CHARS` (default 2000) - per-turn transcript cap.
 
 ## Testing locally with mock frames
 Enable media streams + streaming STT (see docs/twilio-media-streams.md for the
@@ -89,17 +155,22 @@ The `stream_token` is required (signed, expiring) and is never stored/logged.
 ## What is implemented vs not
 Implemented: streaming provider/session interfaces, mock provider, session
 service with limits + safe error handling, WebSocket wiring, safe summary,
-persistence to stream metadata, admin visibility, full test coverage.
+persistence to stream metadata, admin visibility, AI text turn on a FINAL
+transcript through the full safety pipeline (deduped + capped + degraded-safe),
+turn persistence under `streaming_stt.turns`, full test coverage.
 
-NOT implemented: real streaming STT provider, AI turn on final transcript,
-streaming TTS playback, barge-in, turn endpointing, latency metrics.
+NOT implemented: real streaming STT provider, streaming TTS / audio playback back
+to Twilio, barge-in, real end-of-utterance endpointing (the mock decides finals),
+latency metrics.
 
 ## Next steps toward a real-time voice pilot
 1. Real streaming STT provider (Azure/Deepgram/OpenAI realtime) behind
    `StreamingSTTProvider`, feeding actual mu-law frames.
-2. Turn endpointing: detect end-of-utterance to trigger an AI turn through
-   `VoicePipelineService` (text-only mode) on a final transcript.
-3. Streaming TTS: synthesize the reply and send mu-law `media` frames back over the
-   same socket, with `mark` events for playback tracking.
+2. Real turn endpointing: detect end-of-utterance from the provider (silence /
+   provider final) to decide turns, instead of the mock's frame-count heuristic.
+3. Streaming TTS / playback: synthesize the `ai_text` from each turn and send
+   mu-law `media` frames back over the same socket, with `mark` events for
+   playback tracking. (This is the immediate next milestone; the AI text turn is
+   already produced and persisted.)
 4. Barge-in: stop outbound TTS when inbound speech resumes (`clear` event).
 5. Latency + audio-quality metrics and a live voice eval on top of the text evals.

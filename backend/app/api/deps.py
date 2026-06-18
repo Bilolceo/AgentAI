@@ -30,6 +30,7 @@ from app.services.voice.streaming_stt import (
     StreamingSTTProvider,
     StreamingSTTSessionService,
 )
+from app.services.voice.streaming_turn import StreamingTurnService
 from app.services.voice.stt import MockSTTProvider, RealSTTProvider, STTProvider
 from app.services.voice.tts import (
     TTS_FORMAT_CONTENT_TYPES,
@@ -233,4 +234,13 @@ def build_streaming_stt_session_service() -> StreamingSTTSessionService:
         get_streaming_stt_provider(),
         max_frames=settings.streaming_stt_max_frames,
         max_bytes=settings.streaming_stt_max_bytes,
+    )
+
+
+def build_streaming_turn_service(session: AsyncSession) -> StreamingTurnService:
+    """AI-turn runner for a FINAL streaming transcript. Reuses the full call/safety
+    pipeline (CallSessionService); produces a text turn only (no streaming TTS)."""
+    return StreamingTurnService(
+        build_call_session_service(session),
+        max_transcript_chars=settings.streaming_stt_max_transcript_chars,
     )

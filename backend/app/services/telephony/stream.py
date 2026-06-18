@@ -11,6 +11,7 @@ import binascii
 from datetime import datetime, timezone
 from typing import Optional
 
+from sqlalchemy import inspect as sa_inspect
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -117,7 +118,23 @@ class TelephonyStreamService:
             await self._session.commit()
         return n_bytes
 
+    async def ensure_live(self, stream: TelephonyStream) -> TelephonyStream:
+        """Return a usable stream instance.
+
+        A failed streaming turn rolls back the shared session, which EXPIRES this
+        ORM instance; touching its attributes would then do implicit async IO and
+        raise MissingGreenlet. When the instance is expired/detached we re-load it
+        by primary key. In the normal path the instance is live, so this is a no-op
+        (no extra query, no loss of pending frame-count increments)."""
+        state = sa_inspect(stream)
+        if (state.expired or state.detached) and state.identity is not None:
+            fresh = await self._session.get(TelephonyStream, state.identity[0])
+            if fresh is not None:
+                return fresh
+        return stream
+
     async def stop_stream(self, stream: TelephonyStream) -> TelephonyStream:
+        stream = await self.ensure_live(stream)
         if stream.status != "stopped":
             stream.status = "stopped"
             stream.stopped_at = datetime.now(timezone.utc)
@@ -130,12 +147,26 @@ class TelephonyStreamService:
     ) -> TelephonyStream:
         """Merge a streaming-STT summary (counts + final transcript text, NO raw
         audio) into stream_metadata so it shows in the admin detail endpoint."""
+        stream = await self.ensure_live(stream)  # safe after a turn rollback expired it
         meta = dict(stream.stream_metadata or {})
         meta["streaming_stt"] = summary
         stream.stream_metadata = meta
         await self._session.commit()
         await self._session.refresh(stream)
         return stream
+
+    async def resolve_call_session_id(self, stream: TelephonyStream) -> Optional[int]:
+        """Resolve the linked text-simulation Call id (CallSession) for a stream.
+
+        Routes through the stream's TelephonyCall (set at /twilio/voice). Returns
+        None when the stream has no linked call session yet — the streaming AI turn
+        is then simply not run (no crash). No audio is involved here."""
+        tel = None
+        if stream.telephony_call_id is not None:
+            tel = await self._session.get(TelephonyCall, stream.telephony_call_id)
+        if tel is None and stream.provider_call_id:
+            tel = await self._find_call(stream.provider_call_id)
+        return tel.call_session_id if tel is not None else None
 
     # --- admin reads --------------------------------------------------------
     async def list(

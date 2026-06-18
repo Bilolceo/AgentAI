@@ -54,6 +54,12 @@ class Settings(BaseSettings):
     streaming_stt_max_bytes: int = 8_000_000  # per-stream byte cap
     streaming_stt_final_after_frames: int = 25  # mock: emit final after N frames
 
+    # Streaming AI turns: route a FINAL streaming transcript through the existing
+    # AI/safety pipeline (text-only; NO streaming TTS / no audio sent back yet).
+    streaming_stt_ai_turns_enabled: bool = True  # final transcript -> one AI text turn
+    streaming_stt_max_turns: int = 50  # cap AI turns per stream (bounds metadata growth)
+    streaming_stt_max_transcript_chars: int = 2000  # cap transcript chars per turn
+
     # Azure Speech
     azure_speech_key: str = ""
     azure_speech_region: str = "westeurope"

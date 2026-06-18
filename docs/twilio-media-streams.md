@@ -82,21 +82,32 @@ TwiML it returns tells Twilio to open the media-stream WebSocket.
 - No real Twilio account, token, or network is used; no audio is asserted by
   value.
 
-## Streaming STT (mock-first) - now available behind flags
+## Streaming STT + AI turns (mock-first) - now available behind flags
 A streaming STT architecture is wired on top of this spike. With
 `TWILIO_USE_MEDIA_STREAMS=true` AND `STREAMING_STT_ENABLED=true`, media frames are
 fed to a (mock) `StreamingSTTSessionService` and a safe transcript summary is
 attached to `TelephonyStream.stream_metadata.streaming_stt` on stop/disconnect.
-It is mock-only (no real recognition, no AI/TTS). See docs/streaming-stt.md.
+The STT itself is mock-only (no real recognition).
+
+A FINAL transcript now creates an AI TEXT turn: when
+`STREAMING_STT_AI_TURNS_ENABLED=true` and a CallSession is linked to the stream,
+the final transcript is routed once through the full AI/safety pipeline
+(`CallSessionService.handle_message`) and the safe turn (ai_text, action,
+reason_code, transferred, sources, ...) is persisted under `streaming_stt.turns`.
+Partials never call the AI. There is still NO streaming TTS and NO audio is sent
+back to Twilio - the reply text is produced and stored only. See
+docs/streaming-stt.md for the turn structure, limits, and safety guarantees.
 
 ## Next steps toward real-time voice
 1. Real streaming STT provider (Azure/Deepgram/OpenAI realtime) behind
    `StreamingSTTProvider`: feed mu-law frames to a streaming recognizer; emit
    partial + final transcripts (the mock provider already defines this contract).
-2. Turn endpointing: detect end-of-utterance to trigger an AI turn through
-   `VoicePipelineService` without waiting for the whole call.
-3. Streaming TTS: synthesize the AI reply and send mu-law frames back over the
-   same WebSocket (`media` messages), with `mark` events for playback tracking.
+2. Real turn endpointing: trigger the AI turn from a provider end-of-utterance /
+   silence signal instead of the mock's frame-count heuristic (the final ->
+   AI-turn wiring already exists).
+3. Streaming TTS / playback: synthesize each turn's `ai_text` and send mu-law
+   frames back over the same WebSocket (`media` messages), with `mark` events for
+   playback tracking. This is the immediate next milestone.
 4. Barge-in: stop outbound TTS when inbound speech is detected (`clear` event).
 5. Latency + audio-quality metrics and a live voice eval on top of the text evals.
 6. Optionally persist a placeholder inbound `AudioRecording`

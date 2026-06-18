@@ -190,6 +190,14 @@ class CallSessionService:
             sources=result.sources,
         )
 
+    async def rollback(self) -> None:
+        """Roll back the underlying session.
+
+        Used by the streaming-turn layer after a failed turn so a DB/transaction
+        error does not leave the shared AsyncSession in a pending-rollback state
+        (which would break the subsequent stream-summary commit)."""
+        await self._session.rollback()
+
     async def end_call(self, *, call_id: int) -> Call:
         call = await self._get_call(call_id)
         if call.status == "in_progress":

@@ -44,6 +44,11 @@ class TranscriptEvent:
     confidence: Optional[float] = None
     timestamp_ms: Optional[int] = None
     metadata: dict = field(default_factory=dict)
+    # Stable identity for a FINAL event. Providers MUST set a monotonic/unique id
+    # per final so the turn layer can dedup an actual re-delivery WITHOUT conflating
+    # two separate utterances that happen to share the same text. May be None for
+    # partials (they never dedup) or legacy providers (see StreamingTurnManager).
+    event_id: Optional[str] = None
 
 
 @dataclass
@@ -99,6 +104,9 @@ class _MockStreamingSession(StreamingSTTSession):
         self._n = 0
         self._partial_emitted = False
         self._final_emitted = False
+        # Per-session token + monotonic counter -> a stable, unique id per FINAL.
+        self._token = context.stream_sid or "mock-stream"
+        self._final_seq = 0
 
     async def accept_audio_frame(self, frame: StreamingAudioFrame) -> list[TranscriptEvent]:
         self._n += 1
@@ -124,6 +132,12 @@ class _MockStreamingSession(StreamingSTTSession):
         return None
 
     def _event(self, text: str, *, is_final: bool, confidence: Optional[float]) -> TranscriptEvent:
+        event_id = None
+        if is_final:
+            # Monotonic, unique per session: two distinct finals never collide, but a
+            # re-delivery of the same final keeps the same id.
+            event_id = f"{self._token}:final:{self._final_seq}"
+            self._final_seq += 1
         return TranscriptEvent(
             text=text,
             language=self._language,
@@ -132,6 +146,7 @@ class _MockStreamingSession(StreamingSTTSession):
             confidence=confidence,
             timestamp_ms=None,
             metadata={"mode": "mock"},
+            event_id=event_id,
         )
 
 
