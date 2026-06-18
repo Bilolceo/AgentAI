@@ -32,6 +32,23 @@ def _int_or_none(v) -> Optional[int]:
         return None
 
 
+def decode_media_payload(payload, max_frame_bytes: int) -> bytes:
+    """Decode a base64 media payload ONCE, rejecting oversized frames BEFORE
+    allocating. Returns decoded bytes, or b"" for missing/invalid/oversized
+    payloads. The raw base64/string is never logged. Callers reuse the returned
+    bytes for both counting and the streaming frame (no second decode)."""
+    if not isinstance(payload, str) or not payload:
+        return b""
+    # Pre-decode size guard: base64 expands ~4/3; reject before decoding so a huge
+    # frame is never materialized in memory.
+    if len(payload) > (max_frame_bytes * 4 // 3) + 4:
+        return b""
+    try:
+        return base64.b64decode(payload, validate=True)
+    except (binascii.Error, ValueError):
+        return b""
+
+
 class TelephonyStreamService:
     def __init__(
         self,
@@ -74,22 +91,21 @@ class TelephonyStreamService:
         await self._session.refresh(stream)
         return stream
 
-    async def record_media_frame(self, stream: TelephonyStream, event: dict) -> int:
-        """Count one media frame. Returns the decoded byte count (0 if invalid).
+    async def record_media_frame(
+        self, stream: TelephonyStream, event: dict, *, decoded: Optional[bytes] = None
+    ) -> int:
+        """Count one media frame. Returns the (clamped) decoded byte count.
 
-        Enforces per-call frame cap; never buffers/persists the raw payload.
+        `decoded` lets a caller pass bytes already decoded ONCE (streaming path),
+        avoiding a second base64 decode. When omitted, decodes via the shared,
+        size-capped helper. Enforces the per-call frame cap; never persists raw audio.
         """
         if stream.media_frames_count >= self._max_frames_per_call:
             return 0
-        media = event.get("media") or {}
-        payload = media.get("payload") if isinstance(media, dict) else None
-        n_bytes = 0
-        if isinstance(payload, str) and payload:
-            try:
-                decoded = base64.b64decode(payload, validate=True)
-                n_bytes = min(len(decoded), self._max_frame_bytes)
-            except (binascii.Error, ValueError):
-                n_bytes = 0  # invalid base64 -> count the frame, zero bytes
+        if decoded is None:
+            media = event.get("media") if isinstance(event.get("media"), dict) else {}
+            decoded = decode_media_payload(media.get("payload"), self._max_frame_bytes)
+        n_bytes = min(len(decoded), self._max_frame_bytes)
 
         stream.media_frames_count += 1
         stream.media_bytes_count += n_bytes
@@ -107,6 +123,18 @@ class TelephonyStreamService:
             stream.stopped_at = datetime.now(timezone.utc)
             await self._session.commit()
             await self._session.refresh(stream)
+        return stream
+
+    async def attach_streaming_summary(
+        self, stream: TelephonyStream, summary: dict
+    ) -> TelephonyStream:
+        """Merge a streaming-STT summary (counts + final transcript text, NO raw
+        audio) into stream_metadata so it shows in the admin detail endpoint."""
+        meta = dict(stream.stream_metadata or {})
+        meta["streaming_stt"] = summary
+        stream.stream_metadata = meta
+        await self._session.commit()
+        await self._session.refresh(stream)
         return stream
 
     # --- admin reads --------------------------------------------------------

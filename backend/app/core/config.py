@@ -47,6 +47,13 @@ class Settings(BaseSettings):
     twilio_stream_max_frame_bytes: int = 8000  # cap counted bytes per media frame
     twilio_stream_max_frames_per_call: int = 50_000  # cap frames processed per stream
 
+    # Streaming STT (mock-first; runs on the media stream when enabled). No AI/TTS.
+    streaming_stt_provider: str = "mock"  # mock (only)
+    streaming_stt_enabled: bool = False  # only meaningful with TWILIO_USE_MEDIA_STREAMS
+    streaming_stt_max_frames: int = 10_000  # per-stream frame cap (then close safely)
+    streaming_stt_max_bytes: int = 8_000_000  # per-stream byte cap
+    streaming_stt_final_after_frames: int = 25  # mock: emit final after N frames
+
     # Azure Speech
     azure_speech_key: str = ""
     azure_speech_region: str = "westeurope"

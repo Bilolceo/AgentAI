@@ -141,14 +141,17 @@ async def test_stream_service_counts_frames_and_stops(db_session: AsyncSession) 
 
 @pytest.mark.asyncio
 async def test_stream_service_enforces_frame_and_byte_caps(db_session: AsyncSession) -> None:
-    svc = TelephonyStreamService(db_session, max_frame_bytes=4, max_frames_per_call=2)
+    svc = TelephonyStreamService(db_session, max_frame_bytes=8000, max_frames_per_call=2)
     stream = await svc.start_stream(_start_event("MZ2", "CA2"))
-    payload = _b64(b"\x00" * 100)
-    n = await svc.record_media_frame(stream, _media_event(payload))
-    assert n == 4  # byte count capped
-    await svc.record_media_frame(stream, _media_event(payload))
-    await svc.record_media_frame(stream, _media_event(payload))  # beyond the cap
-    assert stream.media_frames_count == 2  # frame count capped
+    # A frame within the per-frame cap counts its real bytes.
+    n = await svc.record_media_frame(stream, _media_event(_b64(b"\x00" * 160)))
+    assert n == 160
+    # An oversized frame (decodes to > max_frame_bytes) is rejected before decode.
+    over = await svc.record_media_frame(stream, _media_event(_b64(b"\x00" * 100_000)))
+    assert over == 0
+    # Frame count cap (max_frames_per_call=2) stops further counting.
+    await svc.record_media_frame(stream, _media_event(_b64(b"\x00" * 160)))
+    assert stream.media_frames_count == 2
 
 
 @pytest.mark.asyncio

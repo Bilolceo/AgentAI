@@ -13,6 +13,7 @@ from fastapi.responses import JSONResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import (
+    build_streaming_stt_session_service,
     build_telephony_intake_service,
     build_telephony_stream_service,
     build_twilio_telephony_service,
@@ -26,8 +27,9 @@ from app.services.telephony.provider import (
     TelephonyParseError,
     TelephonySignatureError,
 )
-from app.services.telephony.stream import TelephonyStreamError
+from app.services.telephony.stream import TelephonyStreamError, decode_media_payload
 from app.services.telephony.twilio import TwilioTelephonyProvider
+from app.services.voice.streaming_stt import StreamingAudioFrame
 
 router = APIRouter()
 log = get_logger("telephony")
@@ -162,20 +164,58 @@ def _authorize_stream(event: dict) -> bool:
     return provider.validate_stream_token(token, call_sid=call_sid)
 
 
+def _to_int(v) -> int | None:
+    try:
+        return int(v)
+    except (TypeError, ValueError):
+        return None
+
+
+def _build_audio_frame(event: dict, stream, decoded: bytes) -> StreamingAudioFrame:
+    """Build a StreamingAudioFrame from already-decoded bytes (decoded ONCE by the
+    caller). The raw payload / base64 string is NEVER logged."""
+    media = event.get("media")
+    if not isinstance(media, dict):
+        media = {}
+    track = media.get("track")
+    return StreamingAudioFrame(
+        stream_sid=stream.stream_sid,
+        call_sid=stream.provider_call_id,
+        sequence_number=_to_int(event.get("sequenceNumber")),
+        timestamp_ms=_to_int(media.get("timestamp")),
+        payload_bytes=decoded,
+        codec="audio/x-mulaw",
+        track=track if isinstance(track, str) else None,
+    )
+
+
 @router.websocket("/twilio/media-stream")
 async def twilio_media_stream(
     websocket: WebSocket, session: AsyncSession = Depends(get_session)
 ) -> None:
     """Accept a Twilio Media Streams WebSocket and track stream lifecycle.
 
-    Parses connected/start/media/stop JSON events and counts frames/bytes. Raw
-    audio payloads are NEVER logged or stored. This is a spike: no streaming
-    STT/TTS, no barge-in. Malformed events close the socket safely.
+    Parses connected/start/media/stop JSON events and counts frames/bytes. When
+    TWILIO_USE_MEDIA_STREAMS and STREAMING_STT_ENABLED are both on, media frames
+    are also fed to a (mock) StreamingSTTSessionService and a safe transcript
+    summary is attached to the stream on stop/disconnect. Raw audio payloads are
+    NEVER logged or stored. No streaming AI/TTS, no barge-in. Malformed events
+    close the socket safely.
     """
     await websocket.accept()
     svc = build_telephony_stream_service(session)
+    streaming_on = settings.streaming_stt_enabled and settings.twilio_use_media_streams
     stream = None
+    stt = None  # StreamingSTTSessionService, only when streaming_on
     frames = 0
+
+    async def _finalize(reason: str) -> None:
+        if stt is None or stream is None:
+            return
+        await stt.finish()
+        # Summary holds counts + recognized text only; never raw audio/base64.
+        await svc.attach_streaming_summary(stream, stt.summary(stopped_reason=reason))
+
     try:
         while True:
             try:
@@ -195,6 +235,14 @@ async def twilio_media_stream(
             if kind == "connected":
                 continue
             if kind == "start":
+                # Twilio sends exactly one start per stream. A duplicate start on the
+                # same socket is anomalous: finalize + stop the existing stream/session
+                # (no orphan, session closed once) and reject with a policy violation.
+                if stream is not None:
+                    await _finalize("superseded")
+                    await svc.stop_stream(stream)
+                    await websocket.close(code=_WS_POLICY)
+                    return
                 # Authenticate BEFORE creating any TelephonyStream row: validate the
                 # signed stream_token passed via <Parameter> in the Connect/Stream TwiML.
                 if not _authorize_stream(event):
@@ -205,20 +253,46 @@ async def twilio_media_stream(
                 except TelephonyStreamError:
                     await websocket.close(code=_WS_UNSUPPORTED)
                     return
+                if streaming_on:
+                    start_obj = event.get("start") or {}
+                    params = start_obj.get("customParameters")
+                    stt = build_streaming_stt_session_service()
+                    await stt.start(
+                        stream_sid=stream.stream_sid,
+                        call_sid=stream.provider_call_id,
+                        params=params if isinstance(params, dict) else {},
+                    )
                 # Do NOT log payloads or the token; only safe identifiers.
                 log.info("twilio_stream_started", stream_sid=stream.stream_sid)
             elif kind == "media":
                 if stream is not None:
-                    await svc.record_media_frame(stream, event)
+                    # Decode the payload at most ONCE; reuse it for counting + frame.
+                    decoded = None
+                    if stt is not None:
+                        media = event.get("media") if isinstance(event.get("media"), dict) else {}
+                        decoded = decode_media_payload(
+                            media.get("payload"), settings.twilio_stream_max_frame_bytes
+                        )
+                    await svc.record_media_frame(stream, event, decoded=decoded)
                     frames += 1
+                    if stt is not None:
+                        # Partial/final events are collected; we do NOT call AI here.
+                        await stt.push_frame(_build_audio_frame(event, stream, decoded or b""))
+                        if stt.over_limit:
+                            await _finalize("over_limit")
+                            await svc.stop_stream(stream)
+                            await websocket.close(code=1000)
+                            return
             elif kind == "stop":
                 if stream is not None:
+                    await _finalize("stop_event")
                     await svc.stop_stream(stream)
                 await websocket.close(code=1000)
                 return
             # "mark" and unknown events are ignored.
     finally:
-        # If the socket dropped mid-stream, still mark it stopped.
+        # If the socket dropped mid-stream, finalize streaming + mark it stopped.
         if stream is not None and stream.status != "stopped":
+            await _finalize("disconnect")
             await svc.stop_stream(stream)
         log.info("twilio_stream_closed", frames=frames)

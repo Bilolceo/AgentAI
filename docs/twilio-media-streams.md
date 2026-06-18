@@ -82,9 +82,17 @@ TwiML it returns tells Twilio to open the media-stream WebSocket.
 - No real Twilio account, token, or network is used; no audio is asserted by
   value.
 
+## Streaming STT (mock-first) - now available behind flags
+A streaming STT architecture is wired on top of this spike. With
+`TWILIO_USE_MEDIA_STREAMS=true` AND `STREAMING_STT_ENABLED=true`, media frames are
+fed to a (mock) `StreamingSTTSessionService` and a safe transcript summary is
+attached to `TelephonyStream.stream_metadata.streaming_stt` on stop/disconnect.
+It is mock-only (no real recognition, no AI/TTS). See docs/streaming-stt.md.
+
 ## Next steps toward real-time voice
-1. Streaming STT adapter: feed mu-law frames to a streaming recognizer; emit
-   partial + final transcripts.
+1. Real streaming STT provider (Azure/Deepgram/OpenAI realtime) behind
+   `StreamingSTTProvider`: feed mu-law frames to a streaming recognizer; emit
+   partial + final transcripts (the mock provider already defines this contract).
 2. Turn endpointing: detect end-of-utterance to trigger an AI turn through
    `VoicePipelineService` without waiting for the whole call.
 3. Streaming TTS: synthesize the AI reply and send mu-law frames back over the

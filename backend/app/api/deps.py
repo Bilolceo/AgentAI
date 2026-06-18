@@ -25,6 +25,11 @@ from app.services.voice.storage import (
     InMemoryAudioStorage,
     LocalAudioStorage,
 )
+from app.services.voice.streaming_stt import (
+    MockStreamingSTTProvider,
+    StreamingSTTProvider,
+    StreamingSTTSessionService,
+)
 from app.services.voice.stt import MockSTTProvider, RealSTTProvider, STTProvider
 from app.services.voice.tts import (
     TTS_FORMAT_CONTENT_TYPES,
@@ -209,4 +214,23 @@ def build_telephony_stream_service(session: AsyncSession) -> TelephonyStreamServ
         session,
         max_frame_bytes=settings.twilio_stream_max_frame_bytes,
         max_frames_per_call=settings.twilio_stream_max_frames_per_call,
+    )
+
+
+def get_streaming_stt_provider() -> StreamingSTTProvider:
+    """Streaming STT provider from STREAMING_STT_PROVIDER (default mock)."""
+    if settings.streaming_stt_provider == "mock":
+        return MockStreamingSTTProvider(
+            final_after_frames=settings.streaming_stt_final_after_frames
+        )
+    raise RuntimeError(
+        f"STREAMING_STT_PROVIDER={settings.streaming_stt_provider} is not implemented (mock)"
+    )
+
+
+def build_streaming_stt_session_service() -> StreamingSTTSessionService:
+    return StreamingSTTSessionService(
+        get_streaming_stt_provider(),
+        max_frames=settings.streaming_stt_max_frames,
+        max_bytes=settings.streaming_stt_max_bytes,
     )
