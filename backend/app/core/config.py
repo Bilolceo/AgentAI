@@ -1,0 +1,125 @@
+"""Ilova sozlamalari — env'dan o'qiladi (pydantic-settings)."""
+from __future__ import annotations
+
+from functools import lru_cache
+from typing import Optional
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    # Umumiy
+    app_env: str = "development"
+    log_level: str = "INFO"
+    public_base_url: str = "http://localhost:8000"
+    api_key: str = "change-me-admin-api-key"
+
+    # Database
+    database_url: str = "postgresql+asyncpg://postgres:postgres@postgres:5432/callcenter"
+    database_url_sync: str = "postgresql+psycopg://postgres:postgres@postgres:5432/callcenter"
+
+    # Redis / Celery
+    redis_url: str = "redis://redis:6379/0"
+    celery_broker_url: str = "redis://redis:6379/1"
+    celery_result_backend: str = "redis://redis:6379/2"
+
+    # Twilio
+    twilio_account_sid: str = ""
+    twilio_auth_token: str = ""
+    twilio_phone_number: str = ""
+
+    # Telephony intake — mock default; twilio is a real (non-streaming) webhook.
+    telephony_provider: str = "mock"  # mock | twilio
+    telephony_webhook_secret: str = ""  # optional; if set, mock webhook requires it
+    telephony_max_payload_bytes: int = 1_000_000  # 1 MB safe default
+
+    # Twilio Voice webhook (non-streaming Gather/SpeechResult; NOT Media Streams).
+    twilio_validate_signature: bool = True  # verify X-Twilio-Signature in twilio mode
+    twilio_voice: str = "alice"  # Twilio <Say> voice
+    twilio_gather_language: str = "ru-RU"  # Twilio <Gather>/<Say> language locale
+    twilio_gather_timeout_seconds: int = 5
+
+    # Twilio Media Streams (WebSocket spike) — parser/lifecycle only, no streaming AI.
+    twilio_use_media_streams: bool = False  # if true, /twilio/voice returns <Connect><Stream>
+    twilio_stream_url: str = ""  # wss:// URL Twilio connects the media stream to
+    twilio_stream_max_frame_bytes: int = 8000  # cap counted bytes per media frame
+    twilio_stream_max_frames_per_call: int = 50_000  # cap frames processed per stream
+
+    # Azure Speech
+    azure_speech_key: str = ""
+    azure_speech_region: str = "westeurope"
+    azure_tts_voice_uz: str = "uz-UZ-MadinaNeural"
+    azure_tts_voice_ru: str = "ru-RU-SvetlanaNeural"
+    stt_default_languages: str = "uz-UZ,ru-RU"
+
+    # AI provider
+    ai_provider: str = "mock"  # mock | claude
+    anthropic_api_key: str = ""
+    claude_model: str = "claude-sonnet-4-6"
+    ai_timeout_seconds: float = 15.0
+    ai_max_tokens: int = 1024
+    ai_temperature: Optional[float] = None
+    llm_agent_model: str = "claude-sonnet-4-6"
+    llm_intent_model: str = "claude-haiku-4-5"
+
+    # Voice layer (STT/TTS) — mock default; real STT/TTS opt-in behind flags.
+    stt_provider: str = "mock"  # mock | openai_whisper
+    tts_provider: str = "mock"  # mock | openai_tts
+    stt_timeout_seconds: float = 15.0
+    tts_timeout_seconds: float = 15.0
+    default_voice_uz: str = "uz-UZ-MadinaNeural"
+    default_voice_ru: str = "ru-RU-SvetlanaNeural"
+
+    # Real TTS (OpenAI TTS) — only used when TTS_PROVIDER=openai_tts.
+    # Reuses OPENAI_API_KEY. Voices are OpenAI voice names (alloy, nova, ...);
+    # if left empty they fall back to DEFAULT_VOICE_UZ / DEFAULT_VOICE_RU.
+    tts_model: str = "tts-1"
+    tts_voice_uz: str = "alloy"
+    tts_voice_ru: str = "nova"
+    tts_audio_format: str = "mp3"  # mp3 | wav | opus | aac | flac | pcm
+    tts_max_text_chars: int = 4000
+
+    # Real STT (OpenAI Whisper) — only used when STT_PROVIDER=openai_whisper.
+    openai_api_key: str = ""
+    stt_model: str = "whisper-1"
+    stt_language_hint: str = ""  # optional ISO-639-1 hint, e.g. "uz" or "ru"
+    stt_max_audio_bytes: int = 25_000_000  # 25 MB (Whisper upload limit)
+    stt_allowed_content_types: str = (
+        "audio/wav,audio/x-wav,audio/mpeg,audio/mp4,audio/m4a,audio/webm,"
+        "audio/ogg,application/octet-stream"
+    )
+
+    @property
+    def stt_allowed_content_types_list(self) -> list[str]:
+        return [s.strip() for s in self.stt_allowed_content_types.split(",") if s.strip()]
+
+    # Audio storage (metadata in DB, blobs out of DB) — mock by default.
+    audio_storage_provider: str = "memory"  # memory | local | s3_placeholder
+    audio_storage_path: str = "./data/audio"
+    audio_retention_days: int = 90
+    signed_url_ttl_seconds: int = 300
+
+    # RAG / embeddings
+    embedding_provider: str = "azure"
+    embedding_model: str = "text-embedding-3-large"
+    embedding_dim: int = 1536
+
+    # Auth / JWT
+    jwt_secret: str = "dev-insecure-change-me"
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 720
+    two_factor_ticket_expire_minutes: int = 5
+
+    @property
+    def stt_languages(self) -> list[str]:
+        return [s.strip() for s in self.stt_default_languages.split(",") if s.strip()]
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
+
+
+settings = get_settings()

@@ -1,0 +1,95 @@
+name: CI
+
+# Text-pilot MVP CI. Mock mode only: no real Claude/Twilio/STT/TTS, no secrets.
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  AI_PROVIDER: mock   # never call a paid provider in CI
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+      - name: Install backend dependencies
+        run: pip install -e ".[dev]"
+      - name: Run pytest (in-memory SQLite, mock provider)
+        run: pytest -q
+
+  backend-lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+      - name: Install backend dependencies
+        run: pip install -e ".[dev]"
+      - name: Ruff lint
+        run: ruff check .
+
+  eval-smoke:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+      - name: Install backend dependencies
+        run: pip install -e ".[dev]"
+      - name: Smoke eval (mock provider; fails if any scenario fails)
+        run: python -m app.eval.run --suite smoke
+
+  frontend-checks:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend dependencies
+        run: npm ci
+      - name: TypeScript typecheck
+        run: npx tsc --noEmit
+      - name: Next.js build
+        env:
+          NEXT_PUBLIC_API_BASE: http://localhost:8000/api/v1
+        run: npm run build
+
+  docker-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create env file for compose interpolation
+        run: cp .env.example .env
+      - name: Validate docker compose config (no image build)
+        run: docker compose -f infra/docker-compose.yml config
