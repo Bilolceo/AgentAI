@@ -308,12 +308,15 @@ def test_ws_streaming_attaches_summary_on_disconnect(monkeypatch, attach_spy) ->
             ws.send_json(_ws_start("MZ-d", "CA-d"))
             ws.send_json(_media(_b64(b"\x00" * 160)))
             ws.send_json(_media(_b64(b"\x00" * 160), seq="3"))
-            # Let the server drain the queued start/media BEFORE the client
-            # disconnect. Without this, a newer starlette TestClient can cancel the
-            # server task on context exit before it reads the queue (server then
-            # sees the disconnect with stream=None), making the finalize-on-
-            # disconnect assertion flaky. Then exit without "stop" -> the server
-            # finalizes via its `finally` (stopped_reason="disconnect").
+            # Disconnect EXPLICITLY (no "stop"), then let the server's `finally`
+            # finalize (stopped_reason="disconnect") while the portal event loop is
+            # still healthy. Closing here - rather than letting the `with` exit do
+            # it - is critical on Python 3.12 + newer starlette: if the socket is
+            # torn down by the context exit, the server runs its async DB finalize
+            # DURING portal/loop shutdown (cancel-all-tasks), and the aiosqlite
+            # commit then deadlocks the portal thread join. The sleep (test thread)
+            # lets the portal thread run the finalize to completion first.
+            ws.close()
             time.sleep(0.5)
     finally:
         app.dependency_overrides.clear()
