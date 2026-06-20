@@ -10,13 +10,23 @@ patient data into this report.
 - Environment (host / region / ngrok or gateway): ____________________
 - Operator(s) running the test: ____________________
 
-## Providers
+## Providers / settings
 - Telephony: twilio
 - STT provider: deepgram (model: __________)
-- TTS provider: deepgram (model: __________, container: none)
+- TTS provider: deepgram (model: __________, encoding: mulaw, sample_rate: 8000)
+- TTS container: none (must be none for Twilio)
 - Barge-in enabled: yes / no
 - Metrics enabled: yes / no
-- Readiness `ready`: true / false (attach `errors[]` / `warnings[]` summary)
+- Max duration (s): ___   Max turns: ___
+
+## Readiness output summary (GET /api/v1/admin/voice-provider-readiness)
+- ready: true / false   (ready=false BLOCKS the test)
+- errors[] (count + short text, no secrets): ____________________
+- warnings[] (count): ___
+- stt_twilio_compatible: yes / no   tts_twilio_compatible: yes / no
+- deepgram_api_key_present: yes / no (boolean only - never the key)
+- smoke_token_present: yes / no (boolean only - never the token)
+- Offline preflight (`python -m app.scripts.voice_smoke_preflight`) exit code: ___
 
 ## Smoke-mode config
 - LIVE_CALL_SMOKE_MODE: true
@@ -54,29 +64,40 @@ For each, mark PASS / FAIL and a short note (no patient data).
 - barge_in_clear_latency_ms:  ___ / ___ / ___
 - total_stream_duration_ms:   ___ / ___ / ___
 
-## Audio quality notes (avg 1-5)
+## Audio quality score (avg 1-5)
 - Intelligibility: ___   Naturalness: ___   Volume/clipping: ___
 - Latency felt: ___   Language/voice correct: ___
+- Overall audio quality (1-5): ___
 - Free-form notes: ____________________
 
-## Safety notes
-- Emergency scenario spoke the official 103 message: yes / no
-- Medical-advice / unknown-price routed to operator or safe refusal: yes / no
-- Any unsafe content observed (diagnosis/medicine/dosage): yes / no - detail: ____
-- Any secret/token/phone/audio found in logs or metadata: yes / no - detail: ____
+## Barge-in score (1-5)
+- Interrupt responsiveness (1=never, 5=immediate): ___
+- barge_in_clear_latency_ms observed (min/median/max): ___ / ___ / ___
+- Notes: ____________________
 
-## Operator transfer notes
+## Safety (PASS / FAIL)
+- Emergency / 103: PASS / FAIL - spoke the official 103 message, no medical advice.
+- Medical-advice / unknown-price -> operator or safe refusal: PASS / FAIL.
+- No unsafe content (diagnosis/medicine/dosage) anywhere: PASS / FAIL - detail: ___
+- No secret/token/phone/audio found in logs or metadata: PASS / FAIL - detail: ___
+
+## Operator transfer (PASS / FAIL)
+- Transfer scenario triggered a transfer: PASS / FAIL
+- Hand-off message correct + safe: PASS / FAIL
 - Transfers triggered (count): ___
-- Hand-off message correct + safe: yes / no
 - Any missed transfer (should have transferred but did not): ____________________
+
+## Emergency (PASS / FAIL)
+- Emergency scenario detected and spoke the 103 message: PASS / FAIL
+- Pipeline did NOT continue with advice after the emergency: PASS / FAIL
 
 ## Bugs found
 1. ____________________
 2. ____________________
 
-## Decision
+## Final decision
 - [ ] PASS - proceed to next pilot stage
 - [ ] RETRY - fix listed issues and re-run smoke test
-- [ ] BLOCK - do not pilot; blocking issues: ____________________
+- [ ] BLOCK pilot - do not pilot; blocking issues: ____________________
 
 Signed off by: ____________________   Date: ____________________

@@ -87,9 +87,13 @@ segment), reconnect/backpressure, language auto-detect from Deepgram metadata
 
 ## Readiness + live smoke test
 Before a controlled real call, validate config with
-`GET /api/v1/admin/voice-provider-readiness` (A31, config only - it flags a missing
-key, non-Twilio-compatible encoding/sample_rate, etc., and never reveals the key).
-Run the gated pilot per docs/live-voice-smoke-test.md.
+`GET /api/v1/admin/voice-provider-readiness` (super_admin/admin only; config only -
+it flags a missing key, non-Twilio-compatible encoding/sample_rate, etc., and never
+reveals the key: `deepgram_api_key_present` is a boolean). `ready:false` blocks the
+test. The same checks run OFFLINE via
+`cd backend && python -m app.scripts.voice_smoke_preflight`. Run the gated pilot per
+docs/live-voice-smoke-test.md; the execution procedure is in
+docs/live-call-smoke-execution.md (A32).
 
 ## Next step
 Real streaming TTS provider integration is DONE (docs/deepgram-streaming-tts.md);

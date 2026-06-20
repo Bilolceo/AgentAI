@@ -130,15 +130,20 @@ NOT implemented: persistent/multiplexed TTS connections (one per turn), real
 audio-quality tuning, provider-side barge-in/clear, OpenAI Realtime / Azure TTS,
 hangup/handoff after an emergency or operator-transfer message.
 
-## Readiness validation (A31)
-`GET /api/v1/admin/voice-provider-readiness` (managers; config only, no network)
-confirms `tts_twilio_compatible` (mu-law/8000/container=none), key presence, and
-the smoke-mode gate config before a real call - without revealing the key or token.
+## Readiness validation (A31/A32)
+`GET /api/v1/admin/voice-provider-readiness` (super_admin/admin only; config only,
+no network) confirms `tts_twilio_compatible` (mu-law/8000/container=none),
+`deepgram_api_key_present`, and the smoke-mode gate config before a real call -
+without revealing the key or token (`*_present` fields are booleans). `ready:false`
+blocks the live smoke test. The same checks run OFFLINE via the preflight script:
+`cd backend && python -m app.scripts.voice_smoke_preflight` (exit 0 = ready).
 
 ## Next step: live voice pilot checklist / provider smoke test
 For the full gated runbook (10 scenarios, latency fields, audio-quality template,
 pass/fail + rollback) see docs/live-voice-smoke-test.md and the report template
-docs/live-voice-smoke-report-template.md (A31).
+docs/live-voice-smoke-report-template.md. The step-by-step execution procedure
+(Railway/Twilio/Deepgram setup, exact order, rollback) is in
+docs/live-call-smoke-execution.md (A32).
 
 Before a real call:
 1. Set `STREAMING_STT_PROVIDER=deepgram` + `STREAMING_TTS_PROVIDER=deepgram`,
