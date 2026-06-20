@@ -17,9 +17,12 @@ path - verify both in every run.
 ## 1. Setup checklist
 - [ ] Backend deployed on a public HTTPS/WSS host (ngrok or your gateway).
 - [ ] `pip install -e ".[stt-streaming]"` (the `websockets` extra for Deepgram).
+- [ ] Offline preflight passes: `cd backend && python -m app.scripts.voice_smoke_preflight`
+      (exit 0 = ready; no network, no secrets printed).
 - [ ] Twilio number webhook points at `POST /api/v1/telephony/twilio/voice`.
 - [ ] `GET /api/v1/admin/voice-provider-readiness` returns `ready: true`
-      (managers only). Resolve every `errors[]` entry; review `warnings[]`.
+      (super_admin/admin only). Resolve every `errors[]` entry; review `warnings[]`.
+- [ ] Step-by-step procedure followed from docs/live-call-smoke-execution.md.
 - [ ] Smoke token generated and shared out-of-band with the test callers' TwiML.
 - [ ] Caller allowlist set to the exact staff test numbers (recommended).
 - [ ] A "no patient data" reminder acknowledged by every tester.

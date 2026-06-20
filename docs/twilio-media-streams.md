@@ -141,10 +141,13 @@ optional caller allowlist, plus hard caps `LIVE_CALL_MAX_TURNS` /
 `LIVE_CALL_MAX_DURATION_SECONDS` (clean stop with `stopped_reason`
 `live_call_max_turns` / `live_call_max_duration`). The token/number are never
 logged (only a safe reason code) and `LIVE_CALL_REDACT_TRANSCRIPTS` can redact
-caller transcript text. Validate config first with
-`GET /api/v1/admin/voice-provider-readiness` (config only, no key/token leak). Full
-runbook + scenarios: docs/live-voice-smoke-test.md (report template:
-docs/live-voice-smoke-report-template.md).
+caller transcript text. Validate config first - OFFLINE with
+`cd backend && python -m app.scripts.voice_smoke_preflight` (exit 0 = ready), or on
+the running service via `GET /api/v1/admin/voice-provider-readiness` (super_admin/
+admin; config only, no key/token leak; `ready:false` blocks the test). Full runbook
++ scenarios: docs/live-voice-smoke-test.md; step-by-step execution procedure:
+docs/live-call-smoke-execution.md; report template:
+docs/live-voice-smoke-report-template.md.
 
 ## Next steps toward real-time voice
 1. Real streaming STT provider (Azure/Deepgram/OpenAI realtime) behind
