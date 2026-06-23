@@ -394,6 +394,35 @@ const DICT: Record<string, Entry> = {
   },
   mgr_doctors_title: { uz: "Shifokorlar", ru: "Врачи" },
 
+  // M2 schedule / doctors / reports
+  mgr_th_time: { uz: "Vaqt", ru: "Время" },
+  mgr_th_patient: { uz: "Bemor", ru: "Пациент" },
+  mgr_th_service: { uz: "Xizmat", ru: "Услуга" },
+  mgr_th_doctor: { uz: "Shifokor", ru: "Врач" },
+  mgr_th_source: { uz: "Manba", ru: "Источник" },
+  mgr_th_specialty: { uz: "Mutaxassislik", ru: "Специальность" },
+  mgr_th_appointments: { uz: "Qabullar", ru: "Приёмы" },
+  mgr_filter_doctor: { uz: "Shifokor", ru: "Врач" },
+  mgr_all_doctors: { uz: "Barcha shifokorlar", ru: "Все врачи" },
+  mgr_notes_mark: { uz: "izoh", ru: "заметка" },
+  mgr_op_required_mark: { uz: "operator", ru: "оператор" },
+  mgr_seed_demo: { uz: "Demo ma'lumot yuklash", ru: "Загрузить демо" },
+  mgr_seed_done: { uz: "Demo ma'lumot yuklandi.", ru: "Демо-данные загружены." },
+  mgr_doctors_empty: { uz: "Shifokorlar yo'q.", ru: "Врачей нет." },
+  mgr_workload_today: { uz: "Bugungi bandlik", ru: "Загрузка сегодня" },
+  // reports
+  mgr_range_today: { uz: "Bugun", ru: "Сегодня" },
+  mgr_range_week: { uz: "Hafta", ru: "Неделя" },
+  mgr_range_month: { uz: "Oy", ru: "Месяц" },
+  mgr_rep_total: { uz: "Jami qabullar", ru: "Всего приёмов" },
+  mgr_rep_ai_created: { uz: "AI yaratdi", ru: "Создано AI" },
+  mgr_rep_op_required: { uz: "Operator kerak", ru: "Нужен оператор" },
+  mgr_rep_cancelled: { uz: "Bekor qilingan", ru: "Отменено" },
+  mgr_rep_no_show: { uz: "Kelmaganlar", ru: "Неявки" },
+  mgr_rep_by_status: { uz: "Holat bo'yicha", ru: "По статусу" },
+  mgr_rep_by_doctor: { uz: "Shifokor bo'yicha", ru: "По врачу" },
+  mgr_rep_empty: { uz: "Bu davr uchun ma'lumot yo'q.", ru: "Нет данных за этот период." },
+
   // overview
   ov_title: { uz: "Boshqaruv paneli", ru: "Панель управления" },
   ov_subtitle: {
@@ -539,6 +568,14 @@ const STATUS: Record<string, Entry> = {
   system: { uz: "Tizim", ru: "Система" },
   user: { uz: "Mijoz", ru: "Клиент" },
   assistant: { uz: "AI", ru: "AI" },
+  // appointment statuses (M2)
+  arrived: { uz: "Keldi", ru: "Прибыл" },
+  no_show: { uz: "Kelmadi", ru: "Не явился" },
+  operator_required: { uz: "Operator kerak", ru: "Нужен оператор" },
+  // appointment sources (M2)
+  ai_call: { uz: "AI qo'ng'irog'i", ru: "AI звонок" },
+  operator: { uz: "Operator", ru: "Оператор" },
+  manual: { uz: "Qo'lda", ru: "Вручную" },
 };
 
 // Knowledge-base category codes -> human labels (urology clinic).

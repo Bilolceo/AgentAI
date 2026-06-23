@@ -291,3 +291,37 @@ export interface ManagerCall {
   started_at: string | null;
   duration_seconds: number | null;
 }
+
+// M2 - appointments / doctors (manager-safe).
+export interface ManagerAppointment {
+  id: number;
+  scheduled_at: string | null;
+  duration_minutes: number;
+  patient_short: string | null;
+  phone_masked: string | null;
+  service: string;
+  doctor_id: number | null;
+  doctor_name: string | null;
+  status: string;
+  source: string;
+  operator_required: boolean;
+  has_notes: boolean;
+}
+
+export interface ManagerDoctorWorkload {
+  doctor_id: number;
+  full_name: string;
+  specialty: string | null;
+  appointments: number;
+}
+
+export interface ManagerReport {
+  range: string;
+  total: number;
+  by_status: Record<string, number>;
+  ai_created: number;
+  operator_required: number;
+  cancelled: number;
+  no_show: number;
+  by_doctor: ManagerDoctorWorkload[];
+}
