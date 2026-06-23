@@ -15,12 +15,14 @@ from sqlalchemy.pool import StaticPool
 
 from app.core.db import Base
 from app.models.admin_user import AdminUser
+from app.models.appointment import Appointment
 from app.models.audio_recording import AudioRecording
 from app.models.audit_log import AuditLog
 from app.models.booking import Booking
 from app.models.call import Call
 from app.models.callback_task import CallbackTask
 from app.models.customer import Customer
+from app.models.doctor import Doctor
 from app.models.knowledge_item import KnowledgeItem
 from app.models.telephony_call import TelephonyCall
 from app.models.telephony_stream import TelephonyStream
@@ -50,6 +52,8 @@ _TABLES = [
     AudioRecording.__table__,
     TelephonyCall.__table__,
     TelephonyStream.__table__,
+    Doctor.__table__,
+    Appointment.__table__,
 ]
 
 
