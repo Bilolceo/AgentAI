@@ -4,6 +4,15 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { login, loginTwoFactor } from "@/lib/auth";
 import { useLanguage } from "@/lib/i18n";
+import type { AuthUser } from "@/lib/types";
+
+// Route each role to its home: managers (clinic director) land on /rahbar,
+// staff land on /admin. force_password_change always wins first.
+function destinationFor(user?: AuthUser | null): string {
+  if (user?.force_password_change) return "/change-password";
+  if (user?.role === "manager") return "/rahbar";
+  return "/admin";
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -26,7 +35,7 @@ export default function LoginPage() {
         setTicket(outcome.ticket!);
         setStage("2fa");
       } else {
-        router.replace(outcome.user?.force_password_change ? "/change-password" : "/admin");
+        router.replace(destinationFor(outcome.user));
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : t("login_failed"));
@@ -41,7 +50,7 @@ export default function LoginPage() {
     setError(null);
     try {
       const user = await loginTwoFactor(ticket, code.trim());
-      router.replace(user.force_password_change ? "/change-password" : "/admin");
+      router.replace(destinationFor(user));
     } catch (err) {
       setError(err instanceof Error ? err.message : t("login_invalid_code"));
     } finally {

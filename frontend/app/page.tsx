@@ -13,6 +13,7 @@ export default function DashboardPage() {
         <Card title={t("home_card_calls")} href="/admin/calls" hint={t("home_card_calls_hint")} />
         <Card title={t("home_card_kb")} href="/admin/knowledge-base" hint={t("home_card_kb_hint")} />
         <Card title={t("home_card_sim")} href="/simulation" hint={t("home_card_sim_hint")} />
+        <Card title={t("home_card_booking")} href="/yozilish" hint={t("home_card_booking_hint")} />
       </div>
     </div>
   );

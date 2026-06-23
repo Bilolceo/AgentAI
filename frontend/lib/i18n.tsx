@@ -355,6 +355,11 @@ const DICT: Record<string, Entry> = {
   mgr_kpi_cancelled: { uz: "Bekor qilingan", ru: "Отменено" },
   mgr_kpi_op_required: { uz: "Operatorga kerak", ru: "Требуется оператор" },
   mgr_sec_today_plan: { uz: "Bugungi reja", ru: "План на сегодня" },
+  mgr_chart_status: { uz: "Qabullar holati", ru: "Приёмы по статусу" },
+  mgr_chart_doctors: { uz: "Shifokorlar bandligi", ru: "Загрузка врачей" },
+  mgr_appts: { uz: "qabul", ru: "приёмы" },
+  mgr_source_ai: { uz: "AI orqali", ru: "Через AI" },
+  mgr_source_other: { uz: "Operator/qo'lda", ru: "Оператор/вручную" },
   mgr_empty_today_plan: { uz: "Bugun qabul rejalashtirilmagan.", ru: "На сегодня приёмы не запланированы." },
   mgr_sec_action_items: { uz: "Harakat talab qiluvchi elementlar", ru: "Требующие действий" },
   mgr_sec_recent_calls: { uz: "So'nggi qo'ng'iroqlar", ru: "Недавние звонки" },
@@ -400,6 +405,51 @@ const DICT: Record<string, Entry> = {
     ru: "Отчёты по датам (сегодня/неделя) появятся с модулем приёмов.",
   },
   mgr_doctors_title: { uz: "Shifokorlar", ru: "Врачи" },
+
+  // --- Rahbar (director) dashboard ---
+  rahbar_brand: { uz: "Klinika rahbari", ru: "Директор клиники" },
+  rahbar_brand_sub: { uz: "Boshqaruv paneli", ru: "Панель управления" },
+  rahbar_title: { uz: "Klinika rahbari paneli", ru: "Панель директора клиники" },
+  rahbar_nav_calendar: { uz: "Kalendar", ru: "Календарь" },
+  rahbar_nav_reports: { uz: "Hisobotlar", ru: "Отчёты" },
+  rahbar_nav_doctors: { uz: "Shifokorlar", ru: "Врачи" },
+  rahbar_nav_notifications: { uz: "Bildirishnomalar", ru: "Уведомления" },
+  rahbar_access_denied: { uz: "Bu sahifaga ruxsatingiz yo'q.", ru: "У вас нет доступа к этой странице." },
+  rahbar_public_link: { uz: "Onlayn yozilish sahifasi", ru: "Страница онлайн-записи" },
+  rahbar_home_sub: { uz: "Klinika faoliyatining umumiy ko'rinishi", ru: "Общий обзор работы клиники" },
+  // week calendar
+  cal_this_week: { uz: "Shu hafta", ru: "Эта неделя" },
+  cal_prev_week: { uz: "Oldingi hafta", ru: "Пред. неделя" },
+  cal_next_week: { uz: "Keyingi hafta", ru: "След. неделя" },
+  cal_empty_week: { uz: "Bu haftada qabul rejalashtirilmagan.", ru: "На этой неделе приёмов нет." },
+  dow_mon: { uz: "Du", ru: "Пн" },
+  dow_tue: { uz: "Se", ru: "Вт" },
+  dow_wed: { uz: "Cho", ru: "Ср" },
+  dow_thu: { uz: "Pa", ru: "Чт" },
+  dow_fri: { uz: "Ju", ru: "Пт" },
+  dow_sat: { uz: "Sha", ru: "Сб" },
+  dow_sun: { uz: "Ya", ru: "Вс" },
+  // KPIs
+  kpi_week_appts: { uz: "Shu hafta qabullar", ru: "Приёмы на неделе" },
+  kpi_today_appts: { uz: "Bugun", ru: "Сегодня" },
+  // new appointment form
+  new_appt: { uz: "Yangi qabul", ru: "Новый приём" },
+  new_appt_title: { uz: "Yangi qabul qo'shish", ru: "Добавить приём" },
+  f_patient_name: { uz: "Bemor ismi", ru: "Имя пациента" },
+  f_phone: { uz: "Telefon", ru: "Телефон" },
+  f_doctor: { uz: "Shifokor", ru: "Врач" },
+  f_service: { uz: "Xizmat", ru: "Услуга" },
+  f_datetime: { uz: "Sana va vaqt", ru: "Дата и время" },
+  f_save: { uz: "Qo'shish", ru: "Добавить" },
+  f_cancel: { uz: "Bekor qilish", ru: "Отмена" },
+  appt_created: { uz: "Qabul qo'shildi.", ru: "Приём добавлен." },
+  appt_required_fields: { uz: "Xizmat va sana/vaqtni kiriting.", ru: "Укажите услугу и дату/время." },
+  // notification bell
+  notif_bell: { uz: "Bildirishnomalar", ru: "Уведомления" },
+  notif_none: { uz: "Yangi bildirishnoma yo'q.", ru: "Новых уведомлений нет." },
+  notif_mark_all: { uz: "Hammasini o'qildi", ru: "Прочитать все" },
+  ntype_appt_new: { uz: "Yangi qabul", ru: "Новый приём" },
+  ntype_appt_cancelled: { uz: "Qabul bekor qilindi", ru: "Приём отменён" },
 
   // M2 schedule / doctors / reports
   mgr_th_time: { uz: "Vaqt", ru: "Время" },
@@ -526,6 +576,83 @@ const DICT: Record<string, Entry> = {
   },
   key_present: { uz: "Mavjud", ru: "Доступен" },
   key_hidden: { uz: "Ko'rsatilmaydi", ru: "Не отображается" },
+
+  home_card_booking: { uz: "Onlayn yozilish", ru: "Онлайн-запись" },
+  home_card_booking_hint: {
+    uz: "Mijozlar uchun ochiq qabulga yozilish sahifasi",
+    ru: "Открытая страница записи на приём для клиентов",
+  },
+
+  // --- Public self-service booking (customer-facing) -------------------------
+  book_brand: { uz: "Urologiya klinikasi", ru: "Урологическая клиника" },
+  book_brand_sub: { uz: "Onlayn qabulga yozilish", ru: "Онлайн-запись на приём" },
+  book_hero_title: { uz: "Qabulga onlayn yoziling", ru: "Запишитесь на приём онлайн" },
+  book_hero_sub: {
+    uz: "Bir necha qadamda shifokor va qulay vaqtni tanlang. So'rovingiz qabul qilinadi va klinika xodimi tasdiqlaydi.",
+    ru: "Выберите врача и удобное время за несколько шагов. Заявка будет принята и подтверждена сотрудником клиники.",
+  },
+  book_step: { uz: "Qadam", ru: "Шаг" },
+  book_step_service: { uz: "Yo'nalish", ru: "Направление" },
+  book_step_doctor: { uz: "Shifokor", ru: "Врач" },
+  book_step_time: { uz: "Sana va vaqt", ru: "Дата и время" },
+  book_step_contact: { uz: "Ma'lumotlaringiz", ru: "Ваши данные" },
+  book_step_done: { uz: "Tayyor", ru: "Готово" },
+  book_choose_service: { uz: "Yo'nalishni tanlang", ru: "Выберите направление" },
+  book_choose_doctor: { uz: "Shifokorni tanlang", ru: "Выберите врача" },
+  book_choose_date: { uz: "Sanani tanlang", ru: "Выберите дату" },
+  book_choose_time: { uz: "Bo'sh vaqtni tanlang", ru: "Выберите свободное время" },
+  book_doctors_count: { uz: "shifokor", ru: "врач(ей)" },
+  book_no_doctors: { uz: "Bu yo'nalishda hozircha shifokor yo'q.", ru: "По этому направлению пока нет врачей." },
+  book_no_slots: {
+    uz: "Tanlangan kunda bo'sh vaqt yo'q. Boshqa kunni tanlang.",
+    ru: "На выбранный день нет свободного времени. Выберите другой день.",
+  },
+  book_no_services: {
+    uz: "Hozircha onlayn yozilish uchun yo'nalishlar mavjud emas.",
+    ru: "Пока нет направлений для онлайн-записи.",
+  },
+  book_name: { uz: "Ism familiya", ru: "Имя и фамилия" },
+  book_name_ph: { uz: "Masalan: Aliyev Akmal", ru: "Например: Алиев Акмал" },
+  book_phone: { uz: "Telefon raqam", ru: "Номер телефона" },
+  book_phone_ph: { uz: "+998 90 123 45 67", ru: "+998 90 123 45 67" },
+  book_phone_hint: { uz: "O'zbekiston raqami: +998 bilan", ru: "Номер Узбекистана: с +998" },
+  book_notes: { uz: "Izoh (ixtiyoriy)", ru: "Комментарий (необязательно)" },
+  book_notes_ph: { uz: "Qisqacha murojaat sababi", ru: "Кратко причина обращения" },
+  book_summary: { uz: "Yozilish ma'lumotlari", ru: "Данные записи" },
+  book_back: { uz: "Orqaga", ru: "Назад" },
+  book_next: { uz: "Davom etish", ru: "Продолжить" },
+  book_submit: { uz: "Yozilishni tasdiqlash", ru: "Подтвердить запись" },
+  book_submitting: { uz: "Yuborilmoqda...", ru: "Отправка..." },
+  book_success_title: { uz: "So'rovingiz qabul qilindi", ru: "Ваша заявка принята" },
+  book_success_sub: {
+    uz: "Klinika xodimi qisqa vaqt ichida siz bilan bog'lanib, qabulni tasdiqlaydi.",
+    ru: "Сотрудник клиники свяжется с вами в ближайшее время и подтвердит приём.",
+  },
+  book_reference: { uz: "So'rov raqami", ru: "Номер заявки" },
+  book_status_pending: { uz: "Tasdiq kutilmoqda", ru: "Ожидает подтверждения" },
+  book_new_one: { uz: "Yana yozilish", ru: "Записаться снова" },
+  book_required: { uz: "Iltimos, ism va telefon raqamini kiriting.", ru: "Пожалуйста, укажите имя и номер телефона." },
+  // booking error codes (backend `detail`)
+  book_err_invalid_phone: { uz: "Telefon raqam noto'g'ri. +998 bilan kiriting.", ru: "Неверный номер. Введите с +998." },
+  book_err_invalid_name: { uz: "Ism noto'g'ri kiritildi.", ru: "Имя указано неверно." },
+  book_err_slot_taken: { uz: "Bu vaqt band qilindi. Boshqa vaqtni tanlang.", ru: "Это время уже занято. Выберите другое." },
+  book_err_too_many_active: {
+    uz: "Sizda faol so'rovlar ko'p. Avval ularni tasdiqlatib oling.",
+    ru: "У вас слишком много активных заявок. Дождитесь их подтверждения.",
+  },
+  book_err_doctor_unavailable: { uz: "Tanlangan shifokor mavjud emas.", ru: "Выбранный врач недоступен." },
+  book_err_rate_limited: { uz: "Juda ko'p urinish. Birozdan so'ng qayta urinib ko'ring.", ru: "Слишком много попыток. Повторите позже." },
+  book_err_generic: { uz: "Xatolik yuz berdi. Qayta urinib ko'ring.", ru: "Произошла ошибка. Повторите попытку." },
+};
+
+// Doctor specialty codes -> human labels (urology clinic). Falls back to the
+// raw value (title-cased) for unknown specialties.
+const SPECIALTY: Record<string, Entry> = {
+  urolog: { uz: "Urolog", ru: "Уролог" },
+  urologist: { uz: "Urolog", ru: "Уролог" },
+  androlog: { uz: "Androlog", ru: "Андролог" },
+  nefrolog: { uz: "Nefrolog", ru: "Нефролог" },
+  uzi: { uz: "UZI diagnostikasi", ru: "УЗИ-диагностика" },
 };
 
 // --- backend enum/code -> display translation (rendered, never raw English) --
@@ -644,7 +771,13 @@ export function useLanguage() {
     const e = CATEGORY[key];
     return e ? e[locale] : code || "-";
   }
-  return { locale, setLocale, t, tStatus, tCat };
+  function tSpec(code?: string | null): string {
+    const raw = (code || "").trim();
+    const e = SPECIALTY[raw.toLowerCase()];
+    if (e) return e[locale];
+    return raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : "-";
+  }
+  return { locale, setLocale, t, tStatus, tCat, tSpec };
 }
 
 export function LanguageSwitcher({ className = "" }: { className?: string }) {

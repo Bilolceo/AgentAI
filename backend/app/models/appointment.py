@@ -10,12 +10,12 @@ from app.core.db import Base
 
 # Status workflow (string column, validated in the service layer):
 # new | pending | confirmed | arrived | in_progress | completed | cancelled | no_show | operator_required
-# Source: ai_call | operator | manual
+# Source: ai_call | operator | manual | web (public self-service booking)
 APPOINTMENT_STATUSES = (
     "new", "pending", "confirmed", "arrived", "in_progress",
     "completed", "cancelled", "no_show", "operator_required",
 )
-APPOINTMENT_SOURCES = ("ai_call", "operator", "manual")
+APPOINTMENT_SOURCES = ("ai_call", "operator", "manual", "web")
 
 
 class Appointment(Base):

@@ -1,7 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import { LanguageProvider } from "@/lib/i18n";
-import SiteHeader from "@/components/SiteHeader";
+import AppShell from "@/components/AppShell";
 
 export const metadata: Metadata = {
   title: "Urologiya klinikasi — AI registrator",
@@ -13,8 +13,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="uz">
       <body className="bg-slate-50 text-slate-900">
         <LanguageProvider>
-          <SiteHeader />
-          <main className="mx-auto max-w-7xl px-4 py-6">{children}</main>
+          <AppShell>{children}</AppShell>
         </LanguageProvider>
       </body>
     </html>

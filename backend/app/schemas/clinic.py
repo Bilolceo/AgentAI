@@ -78,6 +78,43 @@ class AppointmentManagerOut(BaseModel):
     has_notes: bool
 
 
+# --- Public self-service booking ---------------------------------------------
+class PublicServiceOut(BaseModel):
+    specialty: str
+    doctor_count: int
+
+
+class PublicDoctorOut(BaseModel):
+    id: int
+    full_name: str
+    specialty: Optional[str] = None
+    room: Optional[str] = None
+
+
+class PublicSlotsOut(BaseModel):
+    doctor_id: int
+    date: str
+    slots: list[str]
+
+
+class PublicBookingCreate(BaseModel):
+    doctor_id: int
+    date: str  # YYYY-MM-DD
+    time: str  # HH:MM
+    patient_name: str
+    patient_phone: str
+    service: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class PublicBookingResult(BaseModel):
+    ok: bool
+    reference: str
+    status: str
+    doctor_name: str
+    scheduled_at: Optional[datetime] = None
+
+
 class ManagerReportOut(BaseModel):
     range: str
     total: int

@@ -16,10 +16,28 @@ async function getJSON<T>(path: string): Promise<T> {
   return res.json();
 }
 
-async function postJSON<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, { method: "POST", headers: authHeader() });
+async function postJSON<T>(path: string, body?: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers: { ...authHeader(), "Content-Type": "application/json" },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
   if (!res.ok) throw new Error(`Request failed: ${res.status}`);
   return res.json();
+}
+
+export interface NewAppointmentInput {
+  service: string;
+  doctor_id?: number | null;
+  patient_name?: string;
+  patient_phone?: string;
+  scheduled_at?: string;
+  status?: string;
+  source?: string;
+}
+
+export function createManagerAppointment(payload: NewAppointmentInput): Promise<ManagerAppointment> {
+  return postJSON<ManagerAppointment>("/manager/appointments", payload);
 }
 
 export function getManagerStats(): Promise<ManagerStats> {
