@@ -531,7 +531,7 @@ function AISection() {
             </div>
 
             <button
-              data-chat-trigger
+              onClick={() => document.querySelector<HTMLButtonElement>("[data-chat-trigger]")?.click()}
               className="mt-7 inline-flex items-center gap-2.5 rounded-full bg-teal-500 px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-teal-400 hover:shadow-lg hover:shadow-teal-900/40 active:scale-95"
             >
               <span className="pulse-dot h-2 w-2 rounded-full bg-white/70" />
@@ -943,7 +943,7 @@ export default function ClinicLanding() {
           <ContactSection />
         </main>
         <Footer />
-        <ChatWidget />
+        <ChatWidget lang={lang} />
       </div>
     </LangCtx.Provider>
   );
