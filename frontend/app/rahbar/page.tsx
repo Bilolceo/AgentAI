@@ -97,7 +97,9 @@ export default function RahbarHome() {
   const isPending = (a: ManagerAppointment) => a.status === "pending" || a.status === "new";
   const pending = appts.filter(isPending).sort((a, b) => (a.scheduled_at ?? "").localeCompare(b.scheduled_at ?? ""));
   const confirmedCount = appts.filter((a) => a.status === "confirmed").length;
-  const cancelledCount = appts.filter((a) => a.status === "cancelled").length;
+  // Single "needs your action" feed: online requests (no time yet) + unconfirmed
+  // appointments. Leads have no scheduled_at, so they sort to the top.
+  const actionItems = [...leads, ...pending].sort((a, b) => (a.scheduled_at ?? "").localeCompare(b.scheduled_at ?? ""));
 
   function listMatch(a: ManagerAppointment, f: ListFilter): boolean {
     if (f === "confirmed") return a.status === "confirmed";
@@ -120,44 +122,42 @@ export default function RahbarHome() {
         <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">{message}</div>
       )}
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-3 gap-3">
+        <KpiButton onClick={() => actionItems.length && document.getElementById("action-card")?.scrollIntoView({ behavior: "smooth" })}>
+          <StatTile label={t("kpi_pending")} value={actionItems.length} accent="amber" />
+        </KpiButton>
         <KpiButton onClick={() => setListFilter("all")}>
           <StatTile label={t("kpi_week_total")} value={appts.length} accent="indigo" />
-        </KpiButton>
-        <KpiButton onClick={() => pending.length && document.getElementById("pending-card")?.scrollIntoView({ behavior: "smooth" })}>
-          <StatTile label={t("kpi_pending")} value={pending.length} accent="amber" />
         </KpiButton>
         <KpiButton onClick={() => setListFilter("confirmed")}>
           <StatTile label={t("mgr_kpi_confirmed")} value={confirmedCount} accent="emerald" />
         </KpiButton>
-        <KpiButton onClick={() => setListFilter("cancelled")}>
-          <StatTile label={t("mgr_kpi_cancelled")} value={cancelledCount} accent="red" />
-        </KpiButton>
       </div>
 
-      {leads.length > 0 && (
-        <Card className="border-teal-300 ring-1 ring-teal-100">
-          <CardHeader title={t("rahbar_leads_title")} subtitle={t("rahbar_leads_hint")} />
+      {/* One clear "needs your action" list: online requests + unconfirmed
+          appointments, each with one-tap confirm / cancel. */}
+      <div id="action-card">
+        <Card className="border-amber-300 ring-1 ring-amber-100">
+          <CardHeader title={t("rahbar_action_title")} subtitle={t("rahbar_action_hint")} />
           <CardBody className="space-y-2">
-            {leads.map((a) => (
-              <ApptRow key={a.id} a={a} tStatus={tStatus} onClick={() => setPicked(a)} />
-            ))}
+            {actionItems.length === 0 ? (
+              <p className="py-3 text-center text-sm text-slate-400">{t("rahbar_action_empty")}</p>
+            ) : (
+              actionItems.map((a) => (
+                <ActionRow
+                  key={a.id}
+                  a={a}
+                  t={t}
+                  acting={acting}
+                  onConfirm={() => changeStatus(a.id, "confirmed")}
+                  onCancel={() => changeStatus(a.id, "cancelled")}
+                  onOpen={() => setPicked(a)}
+                />
+              ))
+            )}
           </CardBody>
         </Card>
-      )}
-
-      {pending.length > 0 && (
-        <div id="pending-card">
-          <Card className="border-amber-300 ring-1 ring-amber-100">
-            <CardHeader title={t("rahbar_pending_title")} subtitle={t("rahbar_pending_hint")} />
-            <CardBody className="space-y-2">
-              {pending.map((a) => (
-                <ApptRow key={a.id} a={a} tStatus={tStatus} onClick={() => setPicked(a)} />
-              ))}
-            </CardBody>
-          </Card>
-        </div>
-      )}
+      </div>
 
       <Card>
         <CardHeader
@@ -334,6 +334,51 @@ function ApptRow({
         <Badge tone="neutral">{tStatus(a.source)}</Badge>
       </div>
     </button>
+  );
+}
+
+// One-tap action row used in the "needs your confirmation" feed: name + when on
+// the left, large Confirm / Cancel buttons on the right. Tapping the name opens
+// the full detail modal.
+function ActionRow({
+  a,
+  t,
+  acting,
+  onConfirm,
+  onCancel,
+  onOpen,
+}: {
+  a: ManagerAppointment;
+  t: (k: string) => string;
+  acting: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+  onOpen: () => void;
+}) {
+  const when = a.scheduled_at ? a.scheduled_at.slice(0, 16).replace("T", " ") : t("rahbar_lead_no_time");
+  return (
+    <div className="flex flex-col gap-2.5 rounded-lg border border-slate-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between">
+      <button onClick={onOpen} className="min-w-0 text-left">
+        <div className="truncate font-medium text-slate-800">{a.patient_short ?? "-"}</div>
+        <div className="truncate text-xs text-slate-500">{when} · {a.doctor_name ?? a.service}</div>
+      </button>
+      <div className="flex shrink-0 items-center gap-2">
+        <button
+          onClick={onConfirm}
+          disabled={acting}
+          className="flex-1 rounded-lg bg-emerald-600 px-3.5 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 sm:flex-none"
+        >
+          {t("appt_confirm")}
+        </button>
+        <button
+          onClick={onCancel}
+          disabled={acting}
+          className="flex-1 rounded-lg border border-red-300 px-3.5 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50 sm:flex-none"
+        >
+          {t("appt_cancel_appt")}
+        </button>
+      </div>
+    </div>
   );
 }
 
