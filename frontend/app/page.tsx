@@ -931,7 +931,7 @@ export default function ClinicLanding() {
   return (
     <LangCtx.Provider value={{ lang, setLang, t }}>
       <ScrollProgress />
-      <div className="min-h-screen bg-white text-gray-900">
+      <div className="min-h-screen overflow-x-hidden bg-white text-gray-900">
         <Header />
         <main>
           <Hero />
