@@ -8,6 +8,8 @@ export interface MessageResponse {
 
 export interface StartCallResponse {
   call_id: number;
+  greeting?: string;
+  language?: string;
 }
 
 export interface ChatTurn {

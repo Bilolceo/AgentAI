@@ -426,6 +426,8 @@ const DICT: Record<string, Entry> = {
   appt_deleted: { uz: "Qabul o'chirildi.", ru: "Запись удалена." },
   kpi_week_total: { uz: "Bu hafta jami", ru: "Всего за неделю" },
   kpi_pending: { uz: "Tasdiq kutmoqda", ru: "Ожидают подтверждения" },
+  rahbar_leads_title: { uz: "Onlayn so'rovlar", ru: "Онлайн-заявки" },
+  rahbar_leads_hint: { uz: "Saytdan kelgan, qo'ng'iroq qilib vaqt belgilash kerak bo'lgan so'rovlar", ru: "Заявки с сайта — перезвоните и согласуйте время" },
   rahbar_pending_title: { uz: "Tasdiq kutayotgan so'rovlar", ru: "Заявки, ожидающие подтверждения" },
   rahbar_pending_hint: { uz: "Onlayn va qo'lda yozilgan, tasdiqlanmagan qabullar", ru: "Онлайн и ручные записи, ожидающие подтверждения" },
   cal_legend: { uz: "Holatlar", ru: "Статусы" },

@@ -157,6 +157,17 @@ async def manager_schedule(
     return [_appt_out(a, doctors.get(a.doctor_id) if a.doctor_id else None) for a in appts]
 
 
+@router.get("/leads", response_model=list[AppointmentManagerOut])
+async def manager_leads(
+    session: AsyncSession = Depends(get_session),
+    _user: AdminUser = Depends(_MANAGER),
+) -> list[AppointmentManagerOut]:
+    """Online contact-form requests (no slot yet) for staff to call back."""
+    leads = await AppointmentService(session).list_leads()
+    doctors = {d.id: d.full_name for d in await DoctorService(session).list()}
+    return [_appt_out(a, doctors.get(a.doctor_id) if a.doctor_id else None) for a in leads]
+
+
 @router.get("/doctors", response_model=list[DoctorWorkloadOut])
 async def manager_doctors(
     session: AsyncSession = Depends(get_session),

@@ -107,6 +107,12 @@ class PublicBookingCreate(BaseModel):
     notes: Optional[str] = None
 
 
+class PublicCallbackCreate(BaseModel):
+    name: str
+    phone: str
+    message: Optional[str] = None
+
+
 class PublicBookingResult(BaseModel):
     ok: bool
     reference: str

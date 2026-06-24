@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   getManagerSchedule,
   getManagerDoctors,
+  getManagerLeads,
   createManagerAppointment,
   setManagerAppointmentStatus,
   deleteManagerAppointment,
@@ -32,6 +33,7 @@ export default function RahbarHome() {
   const [actErr, setActErr] = useState<string | null>(null);
   const [listFilter, setListFilter] = useState<ListFilter | null>(null);
   const [view, setView] = useState<"agenda" | "calendar">("agenda");
+  const [leads, setLeads] = useState<ManagerAppointment[]>([]);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -42,10 +44,15 @@ export default function RahbarHome() {
       .finally(() => setLoading(false));
   }, [weekStart]);
 
+  const loadLeads = useCallback(() => {
+    getManagerLeads().then(setLeads).catch(() => setLeads([]));
+  }, []);
+
   useEffect(load, [load]);
   useEffect(() => {
     getManagerDoctors().then(setDoctors).catch(() => setDoctors([]));
-  }, []);
+    loadLeads();
+  }, [loadLeads]);
 
   async function changeStatus(id: number, status: string) {
     setActing(true);
@@ -55,6 +62,7 @@ export default function RahbarHome() {
       setPicked(updated);
       setMessage(t("appt_status_updated"));
       load();
+      loadLeads();
     } catch (e) {
       setActErr(e instanceof Error ? e.message : t("error"));
     } finally {
@@ -71,6 +79,7 @@ export default function RahbarHome() {
       setPicked(null);
       setMessage(t("appt_deleted"));
       load();
+      loadLeads();
     } catch (e) {
       setActErr(e instanceof Error ? e.message : t("error"));
     } finally {
@@ -125,6 +134,17 @@ export default function RahbarHome() {
           <StatTile label={t("mgr_kpi_cancelled")} value={cancelledCount} accent="red" />
         </KpiButton>
       </div>
+
+      {leads.length > 0 && (
+        <Card className="border-teal-300 ring-1 ring-teal-100">
+          <CardHeader title={t("rahbar_leads_title")} subtitle={t("rahbar_leads_hint")} />
+          <CardBody className="space-y-2">
+            {leads.map((a) => (
+              <ApptRow key={a.id} a={a} tStatus={tStatus} onClick={() => setPicked(a)} />
+            ))}
+          </CardBody>
+        </Card>
+      )}
 
       {pending.length > 0 && (
         <div id="pending-card">

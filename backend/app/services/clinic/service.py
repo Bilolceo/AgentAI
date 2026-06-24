@@ -112,6 +112,19 @@ class AppointmentService:
         start, end = _day_bounds(day)
         return await self.list_range(start, end)
 
+    async def list_leads(self) -> list[Appointment]:
+        """Web contact-form leads: no slot yet (scheduled_at NULL), status=new."""
+        stmt = (
+            select(Appointment)
+            .where(
+                Appointment.scheduled_at.is_(None),
+                Appointment.source == "web",
+                Appointment.status == "new",
+            )
+            .order_by(Appointment.created_at.desc())
+        )
+        return list((await self._s.execute(stmt)).scalars().all())
+
     async def doctor_workload(self, start: datetime, end: datetime) -> dict[int, int]:
         """Map doctor_id -> appointment count in [start, end)."""
         stmt = (

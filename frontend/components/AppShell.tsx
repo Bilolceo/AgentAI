@@ -12,14 +12,14 @@ import SiteHeader from "./SiteHeader";
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || "";
 
-  if (pathname.startsWith("/rahbar") || pathname.startsWith("/admin")) {
-    // Both dashboards render their own full-screen sidebar shell.
+  if (pathname === "/" || pathname.startsWith("/rahbar") || pathname.startsWith("/admin")) {
+    // Customer landing (/) and both dashboards render their own full-screen shell.
     return <>{children}</>;
   }
   if (pathname.startsWith("/yozilish")) {
     return <div className="min-h-screen bg-slate-50 px-4 py-8">{children}</div>;
   }
-  if (pathname === "/login" || pathname === "/change-password" || pathname === "/") {
+  if (pathname === "/login" || pathname === "/change-password") {
     return <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">{children}</div>;
   }
   return (

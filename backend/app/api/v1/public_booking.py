@@ -21,6 +21,7 @@ from app.core.db import get_session
 from app.schemas.clinic import (
     PublicBookingCreate,
     PublicBookingResult,
+    PublicCallbackCreate,
     PublicDoctorOut,
     PublicServiceOut,
     PublicSlotsOut,
@@ -120,3 +121,23 @@ async def public_book(
         doctor_name=doctor_name,
         scheduled_at=appt.scheduled_at,
     )
+
+
+@router.post("/callback")
+async def public_callback(
+    payload: PublicCallbackCreate,
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+):
+    """Contact-form lead (name/phone/message). Stored as an online request for
+    staff to call back and schedule. Public + rate-limited."""
+    _check_rate(_client_ip(request))
+    svc = PublicBookingService(session)
+    try:
+        appt = await svc.create_lead(
+            name=payload.name, phone=payload.phone, message=payload.message
+        )
+    except BookingError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    await session.commit()
+    return {"ok": True, "reference": f"BR-{appt.id:06d}"}

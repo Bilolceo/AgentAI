@@ -184,6 +184,27 @@ class PublicBookingService:
         )
         return int((await self._s.execute(stmt)).scalar_one()) == 0
 
+    async def create_lead(
+        self, *, name: str, phone: str, message: Optional[str] = None
+    ) -> Appointment:
+        """A web contact-form lead: an appointment with no slot yet (status=new).
+
+        Surfaces to staff as an online request to call back and schedule."""
+        clean_name = validate_name(name)
+        clean_phone = normalize_phone(phone)
+        appt = Appointment(
+            patient_name=clean_name,
+            patient_phone=clean_phone,
+            service="Onlayn so'rov",
+            scheduled_at=None,
+            status="new",
+            source="web",
+            notes=(message or "").strip() or None,
+        )
+        self._s.add(appt)
+        await self._s.flush()
+        return appt
+
     async def book(
         self,
         *,

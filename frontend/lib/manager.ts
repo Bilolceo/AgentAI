@@ -85,6 +85,10 @@ export function getManagerSchedule(
   return getJSON<ManagerAppointment[]>(`/manager/schedule${qs ? `?${qs}` : ""}`);
 }
 
+export function getManagerLeads(): Promise<ManagerAppointment[]> {
+  return getJSON<ManagerAppointment[]>("/manager/leads");
+}
+
 export function getManagerDoctors(): Promise<ManagerDoctorWorkload[]> {
   return getJSON<ManagerDoctorWorkload[]>("/manager/doctors");
 }

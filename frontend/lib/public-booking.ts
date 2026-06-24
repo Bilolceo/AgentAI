@@ -55,6 +55,24 @@ async function getJSON<T>(path: string): Promise<T> {
   return res.json();
 }
 
+export async function createPublicCallback(input: { name: string; phone: string; message?: string }): Promise<void> {
+  const res = await fetch(`${API_BASE}/public/callback`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    let code = String(res.status);
+    try {
+      const body = await res.json();
+      if (body?.detail) code = String(body.detail);
+    } catch {
+      // keep status code
+    }
+    throw new BookingApiError(code);
+  }
+}
+
 export function getPublicServices(): Promise<PublicService[]> {
   return getJSON<PublicService[]>("/public/services");
 }

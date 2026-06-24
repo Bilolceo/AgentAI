@@ -22,6 +22,10 @@ API = "/api/v1"
 
 @pytest_asyncio.fixture
 async def app_client(db_session: AsyncSession):
+    from app.api.v1 import public_booking
+
+    public_booking._hits.clear()  # reset the in-memory rate limiter between tests
+
     async def _override():
         yield db_session
 
@@ -137,3 +141,26 @@ async def test_book_past_date_no_slots(app_client) -> None:
     yesterday = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%d")
     slots = (await c.get(f"{API}/public/slots", params={"doctor_id": doc.id, "date": yesterday})).json()["slots"]
     assert slots == []
+
+
+@pytest.mark.asyncio
+async def test_public_callback_creates_lead(app_client) -> None:
+    c, db = app_client
+    r = await c.post(f"{API}/public/callback", json={
+        "name": "Olim Valiyev", "phone": "+998901112233", "message": "Qayta qo'ng'iroq qiling",
+    })
+    assert r.status_code == 200 and r.json()["ok"]
+    # surfaces to staff via /manager/leads (needs manager auth)
+    from app.services.auth.service import AuthService
+    await AuthService(db).create_user(email="mgr@clinic.uz", password="managerpw", full_name="M", role="manager")
+    await db.commit()
+    tok = (await c.post(f"{API}/auth/login", json={"email": "mgr@clinic.uz", "password": "managerpw"})).json()["access_token"]
+    leads = (await c.get(f"{API}/manager/leads", headers={"Authorization": f"Bearer {tok}"})).json()
+    assert len(leads) == 1 and leads[0]["service"] == "Onlayn so'rov"
+
+
+@pytest.mark.asyncio
+async def test_public_callback_bad_phone(app_client) -> None:
+    c, _ = app_client
+    r = await c.post(f"{API}/public/callback", json={"name": "Olim", "phone": "123"})
+    assert r.status_code == 400 and r.json()["detail"] == "invalid_phone"

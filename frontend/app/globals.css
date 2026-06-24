@@ -2,6 +2,81 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  @apply bg-gray-50 text-gray-900;
+html { scroll-behavior: smooth; }
+body { @apply bg-white text-gray-900 antialiased; }
+
+/* ── Scroll progress bar ─────────────────────────────────── */
+#scroll-progress {
+  position: fixed;
+  top: 0; left: 0; z-index: 100;
+  height: 2.5px;
+  background: linear-gradient(90deg, #14B8A6, #0D9488);
+  transition: width 0.08s linear;
+  pointer-events: none;
+  border-radius: 0 2px 2px 0;
+}
+
+/* ── Waveform bars ───────────────────────────────────────── */
+@keyframes waveBar {
+  0%, 100% { transform: scaleY(0.28); }
+  50%       { transform: scaleY(1);   }
+}
+.wave-bar {
+  transform-origin: center;
+  animation: waveBar 1.1s ease-in-out infinite;
+}
+
+/* ── Pulse dot ───────────────────────────────────────────── */
+@keyframes pulseDot {
+  0%, 100% { opacity: 1;    transform: scale(1);    }
+  50%       { opacity: 0.4; transform: scale(0.75); }
+}
+.pulse-dot { animation: pulseDot 2s ease-in-out infinite; }
+
+/* ── Flow step line draw ─────────────────────────────────── */
+@keyframes drawLine {
+  from { transform: scaleY(0); opacity: 0; }
+  to   { transform: scaleY(1); opacity: 1; }
+}
+.draw-line {
+  transform-origin: top center;
+  animation: drawLine 0.45s cubic-bezier(0.22,1,0.36,1) forwards;
+}
+
+/* ── Number counter pop ──────────────────────────────────── */
+@keyframes countPop {
+  0%   { transform: scale(1);    }
+  45%  { transform: scale(1.14); }
+  100% { transform: scale(1);    }
+}
+.count-pop { animation: countPop 0.4s cubic-bezier(0.22,1,0.36,1); }
+
+/* ── Badge slide in ──────────────────────────────────────── */
+@keyframes badgeIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to   { opacity: 1; transform: translateX(0);     }
+}
+.badge-in { animation: badgeIn 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+
+/* ── Legacy clinic classes (kept for ChatWidget) ─────────── */
+@keyframes clinicPulseDot {
+  0%, 100% { opacity: 1;    transform: scale(1);   }
+  50%       { opacity: 0.45; transform: scale(0.8); }
+}
+.clinic-pulse-dot { animation: clinicPulseDot 2s ease-in-out infinite; }
+.clinic-float     { animation: clinicFloat 4.5s ease-in-out infinite; }
+@keyframes clinicFloat {
+  0%, 100% { transform: translateY(0px);  }
+  50%       { transform: translateY(-9px); }
+}
+
+/* ── Reduced motion ──────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .wave-bar, .pulse-dot, .draw-line, .count-pop,
+  .badge-in, .clinic-pulse-dot, .clinic-float {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  #scroll-progress { display: none; }
 }
