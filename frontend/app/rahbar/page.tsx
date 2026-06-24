@@ -30,6 +30,7 @@ export default function RahbarHome() {
   const [acting, setActing] = useState(false);
   const [actErr, setActErr] = useState<string | null>(null);
   const [listFilter, setListFilter] = useState<ListFilter | null>(null);
+  const [view, setView] = useState<"agenda" | "calendar">("agenda");
 
   const load = useCallback(() => {
     setLoading(true);
@@ -126,10 +127,23 @@ export default function RahbarHome() {
           title={t("rahbar_nav_calendar")}
           subtitle={weekRange}
           actions={
-            <div className="flex items-center gap-1">
-              <button className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-100" onClick={() => setWeekStart(addDays(weekStart, -7))}>{t("cal_prev_week")}</button>
-              <button className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-100" onClick={() => setWeekStart(startOfWeek(new Date()))}>{t("cal_this_week")}</button>
-              <button className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-100" onClick={() => setWeekStart(addDays(weekStart, 7))}>{t("cal_next_week")}</button>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex overflow-hidden rounded-lg border border-slate-300 text-xs">
+                {(["agenda", "calendar"] as const).map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => setView(v)}
+                    className={`px-2.5 py-1 ${view === v ? "bg-indigo-600 text-white" : "bg-white text-slate-600 hover:bg-slate-100"}`}
+                  >
+                    {t(v === "agenda" ? "view_agenda" : "view_calendar")}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-1">
+                <button className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-100" onClick={() => setWeekStart(addDays(weekStart, -7))}>{t("cal_prev_week")}</button>
+                <button className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-100" onClick={() => setWeekStart(startOfWeek(new Date()))}>{t("cal_this_week")}</button>
+                <button className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-100" onClick={() => setWeekStart(addDays(weekStart, 7))}>{t("cal_next_week")}</button>
+              </div>
             </div>
           }
         />
@@ -139,12 +153,14 @@ export default function RahbarHome() {
           ) : error ? (
             <div className="p-4"><ErrorState message={error} /></div>
           ) : appts.length === 0 ? (
-            <div className="p-6 text-center text-sm text-slate-400">{t("cal_empty_week")}</div>
+            <div className="p-6 text-center text-sm text-slate-400">{t(view === "agenda" ? "agenda_empty_week" : "cal_empty_week")}</div>
+          ) : view === "agenda" ? (
+            <WeekAgenda weekStart={weekStart} appts={appts} dayLabels={dayLabels} t={t} tStatus={tStatus} onPick={setPicked} />
           ) : (
             <WeekCalendar weekStart={weekStart} appointments={appts} dayLabels={dayLabels} onPick={setPicked} statusLabel={tStatus} />
           )}
         </CardBody>
-        {appts.length > 0 && <Legend t={t} tStatus={tStatus} />}
+        {appts.length > 0 && view === "calendar" && <Legend t={t} tStatus={tStatus} />}
       </Card>
 
       {listFilter && (
@@ -290,6 +306,61 @@ function Legend({
           {tStatus(s)}
         </span>
       ))}
+    </div>
+  );
+}
+
+// Agenda view: appointments grouped by day. Only days that actually have
+// appointments are shown, so there is no wasted empty grid (mobile-friendly).
+function WeekAgenda({
+  weekStart,
+  appts,
+  dayLabels,
+  t,
+  tStatus,
+  onPick,
+}: {
+  weekStart: Date;
+  appts: ManagerAppointment[];
+  dayLabels: string[];
+  t: (k: string) => string;
+  tStatus: (code?: string | null) => string;
+  onPick: (a: ManagerAppointment) => void;
+}) {
+  const todayKey = ymd(new Date());
+  const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+
+  const sections = days
+    .map((d, i) => {
+      const key = ymd(d);
+      const items = appts
+        .filter((a) => (a.scheduled_at ?? "").slice(0, 10) === key)
+        .sort((a, b) => (a.scheduled_at ?? "").localeCompare(b.scheduled_at ?? ""));
+      return { key, label: dayLabels[i], date: d, items };
+    })
+    .filter((s) => s.items.length > 0);
+
+  return (
+    <div className="divide-y divide-slate-100">
+      {sections.map((s) => {
+        const isToday = s.key === todayKey;
+        return (
+          <div key={s.key} className="px-4 py-3">
+            <div className="mb-2 flex items-center gap-2">
+              <span className={`text-sm font-semibold ${isToday ? "text-indigo-700" : "text-slate-700"}`}>
+                {s.label}, {String(s.date.getDate()).padStart(2, "0")}.{String(s.date.getMonth() + 1).padStart(2, "0")}
+              </span>
+              {isToday && <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-medium text-indigo-700">{t("mgr_today")}</span>}
+              <span className="text-xs text-slate-400">· {s.items.length} {t("appts_count")}</span>
+            </div>
+            <div className="space-y-2">
+              {s.items.map((a) => (
+                <ApptRow key={a.id} a={a} tStatus={tStatus} onClick={() => onPick(a)} />
+              ))}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

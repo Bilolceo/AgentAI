@@ -68,6 +68,11 @@ function initials(name: string): string {
   return ((p[0]?.[0] ?? "") + (p[1]?.[0] ?? "")).toUpperCase() || "A";
 }
 
+function todayLabel(): string {
+  const d = new Date();
+  return `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`;
+}
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -192,7 +197,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-5 md:px-8">
           <div>
             <h1 className="text-base font-semibold text-slate-900 md:text-lg">{pageTitle}</h1>
-            <p className="hidden text-xs text-slate-400 sm:block">{t("shell_title")}</p>
+            <p className="hidden text-xs text-slate-400 sm:block">{todayLabel()}</p>
           </div>
           <LanguageSwitcher />
         </header>
