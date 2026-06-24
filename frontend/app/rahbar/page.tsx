@@ -6,6 +6,7 @@ import {
   getManagerDoctors,
   getManagerReports,
   createManagerAppointment,
+  setManagerAppointmentStatus,
 } from "@/lib/manager";
 import type { ManagerAppointment, ManagerDoctorWorkload, ManagerReport } from "@/lib/types";
 import { useLanguage } from "@/lib/i18n";
@@ -25,6 +26,28 @@ export default function RahbarHome() {
   const [message, setMessage] = useState<string | null>(null);
   const [picked, setPicked] = useState<ManagerAppointment | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [acting, setActing] = useState(false);
+  const [actErr, setActErr] = useState<string | null>(null);
+
+  const refreshToday = useCallback(() => {
+    getManagerReports("today").then(setReport).catch(() => setReport(null));
+  }, []);
+
+  async function changeStatus(id: number, status: string) {
+    setActing(true);
+    setActErr(null);
+    try {
+      const updated = await setManagerAppointmentStatus(id, status);
+      setPicked(updated);
+      setMessage(t("appt_status_updated"));
+      load();
+      refreshToday();
+    } catch (e) {
+      setActErr(e instanceof Error ? e.message : t("error"));
+    } finally {
+      setActing(false);
+    }
+  }
 
   const load = useCallback(() => {
     setLoading(true);
@@ -95,7 +118,7 @@ export default function RahbarHome() {
       </Card>
 
       {picked && (
-        <Modal onClose={() => setPicked(null)} title={`${picked.scheduled_at?.slice(0, 16).replace("T", " ")}`}>
+        <Modal onClose={() => { setPicked(null); setActErr(null); }} title={`${picked.scheduled_at?.slice(0, 16).replace("T", " ")}`}>
           <div className="space-y-2 text-sm">
             <Row label={t("mgr_th_patient")} value={picked.patient_short ?? "-"} />
             <Row label={t("f_phone")} value={picked.phone_masked ?? "-"} />
@@ -107,6 +130,38 @@ export default function RahbarHome() {
               {picked.operator_required && <Badge tone="warning">{t("mgr_op_required_mark")}</Badge>}
             </div>
           </div>
+
+          {actErr && <p className="mt-3 text-sm text-red-600">{actErr}</p>}
+
+          {["new", "pending", "confirmed", "operator_required"].includes(picked.status) && (
+            <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
+              {["new", "pending", "operator_required"].includes(picked.status) && (
+                <button
+                  onClick={() => changeStatus(picked.id, "confirmed")}
+                  disabled={acting}
+                  className="rounded-lg bg-emerald-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  {t("appt_confirm")}
+                </button>
+              )}
+              {picked.status === "confirmed" && (
+                <button
+                  onClick={() => changeStatus(picked.id, "arrived")}
+                  disabled={acting}
+                  className="rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {t("appt_mark_arrived")}
+                </button>
+              )}
+              <button
+                onClick={() => changeStatus(picked.id, "cancelled")}
+                disabled={acting}
+                className="rounded-lg border border-red-300 px-3.5 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+              >
+                {t("appt_cancel_appt")}
+              </button>
+            </div>
+          )}
         </Modal>
       )}
 

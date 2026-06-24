@@ -416,6 +416,10 @@ const DICT: Record<string, Entry> = {
   rahbar_nav_notifications: { uz: "Bildirishnomalar", ru: "Уведомления" },
   rahbar_access_denied: { uz: "Bu sahifaga ruxsatingiz yo'q.", ru: "У вас нет доступа к этой странице." },
   rahbar_public_link: { uz: "Onlayn yozilish sahifasi", ru: "Страница онлайн-записи" },
+  appt_confirm: { uz: "Tasdiqlash", ru: "Подтвердить" },
+  appt_cancel_appt: { uz: "Bekor qilish", ru: "Отменить" },
+  appt_mark_arrived: { uz: "Keldi deb belgilash", ru: "Отметить как пришёл" },
+  appt_status_updated: { uz: "Qabul holati yangilandi.", ru: "Статус приёма обновлён." },
   rahbar_home_sub: { uz: "Klinika faoliyatining umumiy ko'rinishi", ru: "Общий обзор работы клиники" },
   // week calendar
   cal_this_week: { uz: "Shu hafta", ru: "Эта неделя" },

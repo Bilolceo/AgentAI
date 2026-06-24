@@ -26,6 +26,20 @@ async function postJSON<T>(path: string, body?: unknown): Promise<T> {
   return res.json();
 }
 
+async function patchJSON<T>(path: string, body?: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "PATCH",
+    headers: { ...authHeader(), "Content-Type": "application/json" },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+  return res.json();
+}
+
+export function setManagerAppointmentStatus(id: number, status: string): Promise<ManagerAppointment> {
+  return patchJSON<ManagerAppointment>(`/manager/appointments/${id}/status`, { status });
+}
+
 export interface NewAppointmentInput {
   service: string;
   doctor_id?: number | null;
