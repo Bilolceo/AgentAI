@@ -176,15 +176,17 @@ function Header() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="flex h-16 items-center justify-between gap-4">
           {/* Logo */}
-          <a href="#home" className="flex shrink-0 items-center gap-2 group">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-teal-500 transition-transform duration-200 group-hover:scale-105">
-              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} className="h-4 w-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12M6 12h12" />
-              </svg>
+          <a href="#home" className="flex shrink-0 items-center gap-2.5 group">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/shield-logo.svg"
+              alt=""
+              className="h-10 w-auto transition-transform duration-200 group-hover:scale-105"
+            />
+            <div className="flex flex-col leading-none">
+              <span className="text-[15px] font-extrabold tracking-tight text-gray-900">HOSPITAL</span>
+              <span className="text-[9px] font-semibold tracking-[0.15em] text-gray-500">by KHUSANOV</span>
             </div>
-            <span className="text-[15px] font-bold text-gray-900">
-              UroClinic <span className="text-teal-500">AI</span>
-            </span>
           </a>
 
           {/* Desktop nav */}
@@ -370,17 +372,27 @@ function Hero() {
               {/* Stats */}
               <div className="grid grid-cols-2 border-t border-gray-100">
                 <div className="border-r border-gray-100 px-5 py-4">
-                  <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide">
-                    {lang === "uz" ? "Bugungi qo'ng'iroqlar" : "Звонков сегодня"}
-                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide">
+                      {lang === "uz" ? "Bugungi qo'ng'iroqlar" : "Звонков сегодня"}
+                    </p>
+                    <span className="rounded bg-gray-100 px-1 py-0.5 text-[9px] font-bold text-gray-400 uppercase">
+                      {lang === "uz" ? "Namuna" : "Пример"}
+                    </span>
+                  </div>
                   <p className={`mt-1.5 text-4xl font-extrabold text-gray-900 tabular-nums ${callPopped ? "count-pop" : ""}`}>
                     {calls}
                   </p>
                 </div>
                 <div className="px-5 py-4">
-                  <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide">
-                    {lang === "uz" ? "Qabul so'rovlari" : "Записей"}
-                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide">
+                      {lang === "uz" ? "Qabul so'rovlari" : "Записей"}
+                    </p>
+                    <span className="rounded bg-gray-100 px-1 py-0.5 text-[9px] font-bold text-gray-400 uppercase">
+                      {lang === "uz" ? "Namuna" : "Пример"}
+                    </span>
+                  </div>
                   <p className={`mt-1.5 text-4xl font-extrabold text-gray-900 tabular-nums ${bookingPopped ? "count-pop" : ""}`}>
                     {bookings}
                   </p>
@@ -789,28 +801,91 @@ function ContactSection() {
 // FOOTER
 // ─────────────────────────────────────────────────────────
 
+function PrivacyModal({ onClose }: { onClose: () => void }) {
+  const { lang } = useT();
+  const isUz = lang === "uz";
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+      style={{ backgroundColor: "rgba(0,0,0,0.55)" }}
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl overflow-y-auto"
+        style={{ maxHeight: "80vh" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full hover:bg-gray-100 text-gray-400"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        <h2 className="text-lg font-extrabold text-gray-900 pr-6">
+          {isUz ? "Maxfiylik siyosati" : "Политика конфиденциальности"}
+        </h2>
+        <p className="mt-1 text-xs text-gray-400">{isUz ? "Oxirgi yangilanish: 2025" : "Последнее обновление: 2025"}</p>
+        <div className="mt-4 space-y-4 text-sm leading-relaxed text-gray-600">
+          {isUz ? (
+            <>
+              <p><strong className="text-gray-800">1. Ma'lumot to'plash.</strong> Klinikamiz siz tomonidan taqdim etilgan ism, telefon raqami va murojaat mazmunini qabul so'rovlarini qayta ishlash maqsadida to'playdi.</p>
+              <p><strong className="text-gray-800">2. Ma'lumotdan foydalanish.</strong> To'plangan ma'lumotlar faqat qabul belgilash, eslatmalar yuborish va klinika xizmatlari haqida xabardor qilish uchun ishlatiladi.</p>
+              <p><strong className="text-gray-800">3. Ma'lumotni uchinchi shaxslarga berish.</strong> Bemor ma'lumotlari qonun talablari yoki shifokor ko'rigi zaruriyati bundan mustasno, uchinchi shaxslarga berilmaydi.</p>
+              <p><strong className="text-gray-800">4. Xavfsizlik.</strong> Ma'lumotlaringiz xavfsizligini ta'minlash uchun zamonaviy himoya usullari qo'llaniladi.</p>
+              <p><strong className="text-gray-800">5. Murojaat.</strong> Ma'lumotlaringizni ko'rish, o'zgartirish yoki o'chirish uchun: +998 71 XXX XX XX raqamiga qo'ng'iroq qiling.</p>
+            </>
+          ) : (
+            <>
+              <p><strong className="text-gray-800">1. Сбор данных.</strong> Клиника собирает имя, номер телефона и содержание обращения, предоставленные вами, для обработки заявок на приём.</p>
+              <p><strong className="text-gray-800">2. Использование данных.</strong> Собранные данные используются исключительно для записи на приём, отправки напоминаний и информирования об услугах клиники.</p>
+              <p><strong className="text-gray-800">3. Передача данных третьим лицам.</strong> Данные пациентов не передаются третьим лицам, за исключением случаев, предусмотренных законом или медицинской необходимостью.</p>
+              <p><strong className="text-gray-800">4. Безопасность.</strong> Для защиты ваших данных применяются современные технические меры безопасности.</p>
+              <p><strong className="text-gray-800">5. Обращения.</strong> Для просмотра, изменения или удаления своих данных свяжитесь с нами: +998 71 XXX XX XX</p>
+            </>
+          )}
+        </div>
+        <button
+          onClick={onClose}
+          className="mt-6 w-full rounded-full bg-teal-500 py-2.5 text-sm font-semibold text-white hover:bg-teal-600 transition-colors"
+        >
+          {isUz ? "Yopish" : "Закрыть"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function Footer() {
   const { t } = useT();
+  const [showPrivacy, setShowPrivacy] = useState(false);
   return (
-    <footer className="text-gray-400" style={{ backgroundColor: "#071820" }}>
-      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-teal-500">
-            <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} className="h-4 w-4">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12M6 12h12" />
-            </svg>
+    <>
+      {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
+      <footer className="text-gray-400" style={{ backgroundColor: "#071820" }}>
+        <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+          <div className="flex items-center gap-2.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/shield-logo.svg" alt="" className="h-9 w-auto brightness-0 invert" />
+            <div className="flex flex-col leading-none">
+              <span className="text-[14px] font-extrabold tracking-tight text-white">HOSPITAL</span>
+              <span className="text-[8px] font-semibold tracking-[0.15em] text-gray-400">by KHUSANOV</span>
+            </div>
           </div>
-          <span className="font-bold text-white">
-            UroClinic <span className="text-teal-400">AI</span>
-          </span>
+          <p className="mt-4 max-w-lg text-sm leading-relaxed text-gray-500">{t.footer.safety}</p>
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-white/5 pt-5 text-xs">
+            <span className="text-gray-600">{t.footer.copy}</span>
+            <button
+              onClick={() => setShowPrivacy(true)}
+              className="text-gray-600 transition-colors hover:text-gray-400 underline underline-offset-2"
+            >
+              {t.footer.privacy}
+            </button>
+          </div>
         </div>
-        <p className="mt-4 max-w-lg text-sm leading-relaxed text-gray-500">{t.footer.safety}</p>
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-white/5 pt-5 text-xs">
-          <span className="text-gray-600">{t.footer.copy}</span>
-          <a href="#" className="text-gray-600 transition-colors hover:text-gray-400">{t.footer.privacy}</a>
-        </div>
-      </div>
-    </footer>
+      </footer>
+    </>
   );
 }
 

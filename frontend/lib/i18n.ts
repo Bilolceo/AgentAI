@@ -69,9 +69,9 @@ export const translations = {
       title: "Bizning shifokorlar",
       sub: "Malakali mutaxassislar jamoasi",
       cards: [
-        { init: "UA", name: "Dr. [Ism Familiya]", spec: "Urolog",         exp: "10+ yil tajriba", sched: "Du–Ju | 09:00–17:00" },
-        { init: "UB", name: "Dr. [Ism Familiya]", spec: "Urolog-hirurg",  exp: "8+ yil tajriba",  sched: "Se–Shan | 10:00–18:00" },
-        { init: "UC", name: "Dr. [Ism Familiya]", spec: "Pediatrik urolog", exp: "12+ yil tajriba", sched: "Du–Ju | 08:00–16:00" },
+        { init: "SY", name: "Dr. Sardor Yusupov",   spec: "Urolog",           exp: "10+ yil tajriba", sched: "Du–Ju | 09:00–17:00" },
+        { init: "BT", name: "Dr. Bobur Toshmatov",  spec: "Urolog-hirurg",    exp: "8+ yil tajriba",  sched: "Se–Shan | 10:00–18:00" },
+        { init: "DK", name: "Dr. Dilnoza Karimova", spec: "Pediatrik urolog", exp: "12+ yil tajriba", sched: "Du–Ju | 08:00–16:00" },
       ],
       btn: "Qabulga yozilish",
     },
@@ -132,7 +132,7 @@ export const translations = {
       privacy: "Maxfiylik siyosati",
       safety:
         "Saytdagi ma'lumotlar umumiy ma'lumot uchun mo'ljallangan. Diagnoz qo'yish va davolash bo'yicha shifokorga murojaat qiling. Favqulodda holatda 103 ga qo'ng'iroq qiling.",
-      copy: "© 2025 UroCare. Barcha huquqlar himoyalangan.",
+      copy: "© 2025 Hospital by Khusanov. Barcha huquqlar himoyalangan.",
     },
   },
 
@@ -204,9 +204,9 @@ export const translations = {
       title: "Наши врачи",
       sub: "Команда квалифицированных специалистов",
       cards: [
-        { init: "UA", name: "Д-р [Имя Фамилия]", spec: "Уролог",          exp: "Опыт 10+ лет", sched: "Пн–Пт | 09:00–17:00" },
-        { init: "UB", name: "Д-р [Имя Фамилия]", spec: "Уролог-хирург",   exp: "Опыт 8+ лет",  sched: "Ср–Сб | 10:00–18:00" },
-        { init: "UC", name: "Д-р [Имя Фамилия]", spec: "Детский уролог",  exp: "Опыт 12+ лет", sched: "Пн–Пт | 08:00–16:00" },
+        { init: "SY", name: "Д-р Сардор Юсупов",   spec: "Уролог",           exp: "Опыт 10+ лет", sched: "Пн–Пт | 09:00–17:00" },
+        { init: "BT", name: "Д-р Бобур Тошматов",  spec: "Уролог-хирург",   exp: "Опыт 8+ лет",  sched: "Ср–Сб | 10:00–18:00" },
+        { init: "DK", name: "Д-р Дилноза Каримова", spec: "Детский уролог",  exp: "Опыт 12+ лет", sched: "Пн–Пт | 08:00–16:00" },
       ],
       btn: "Записаться",
     },
@@ -267,7 +267,7 @@ export const translations = {
       privacy: "Политика конфиденциальности",
       safety:
         "Информация на сайте носит общий ознакомительный характер. По вопросам диагностики и лечения обращайтесь к врачу. В экстренных случаях звоните 103.",
-      copy: "© 2025 UroCare. Все права защищены.",
+      copy: "© 2025 Hospital by Khusanov. Все права защищены.",
     },
   },
 };
