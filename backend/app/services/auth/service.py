@@ -10,7 +10,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.admin_user import AdminUser
 from app.services.auth.password import hash_password, verify_password
 
-VALID_ROLES = ("super_admin", "admin", "operator", "manager")
+# "staff" is a read-only clinic worker: can view the schedule/reports/
+# notifications but cannot confirm, cancel, create, or delete anything.
+VALID_ROLES = ("super_admin", "admin", "operator", "manager", "staff")
 
 
 class AuthService:

@@ -178,7 +178,7 @@ export interface TelephonyCallFilters {
   offset?: number;
 }
 
-export type Role = "super_admin" | "admin" | "operator" | "manager";
+export type Role = "super_admin" | "admin" | "operator" | "manager" | "staff";
 
 export interface AuthUser {
   id: number;

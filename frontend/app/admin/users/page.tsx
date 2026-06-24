@@ -14,7 +14,7 @@ import {
 import { useLanguage } from "@/lib/i18n";
 import type { ManagedUser, Role } from "@/lib/types";
 
-const ROLES: Role[] = ["super_admin", "admin", "operator"];
+const ROLES: Role[] = ["super_admin", "admin", "operator", "manager", "staff"];
 
 export default function UsersPage() {
   const { t } = useLanguage();

@@ -6,11 +6,12 @@ import { login, loginTwoFactor } from "@/lib/auth";
 import { useLanguage, LanguageSwitcher } from "@/lib/i18n";
 import type { AuthUser } from "@/lib/types";
 
-// Route each role to its home: managers (clinic director) land on /rahbar,
-// staff land on /admin. force_password_change always wins first.
+// Route each role to its home: the clinic director (manager) and read-only
+// clinic staff land on /rahbar; admins/operators land on /admin.
+// force_password_change always wins first.
 function destinationFor(user?: AuthUser | null): string {
   if (user?.force_password_change) return "/change-password";
-  if (user?.role === "manager") return "/rahbar";
+  if (user?.role === "manager" || user?.role === "staff") return "/rahbar";
   return "/admin";
 }
 

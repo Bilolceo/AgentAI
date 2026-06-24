@@ -37,6 +37,9 @@ router = APIRouter()
 
 # Manager dashboard is for the clinic manager/owner; admins/super_admins also see it.
 _MANAGER = require_roles("manager", "admin", "super_admin")
+# Read-only viewers: clinic staff additionally may GET (view) the dashboard data,
+# but never mutate it. All write endpoints stay gated by _MANAGER.
+_VIEWER = require_roles("manager", "admin", "super_admin", "staff")
 _SUPER = require_roles("super_admin")
 
 
@@ -82,7 +85,7 @@ def _mask_phone(raw: Optional[str]) -> Optional[str]:
 @router.get("/stats", response_model=ManagerStatsOut)
 async def manager_stats(
     session: AsyncSession = Depends(get_session),
-    _user: AdminUser = Depends(_MANAGER),
+    _user: AdminUser = Depends(_VIEWER),
 ) -> ManagerStatsOut:
     s = await AdminDashboardService(session).stats()
     return ManagerStatsOut(
@@ -97,7 +100,7 @@ async def manager_stats(
 @router.get("/action-items", response_model=list[ManagerActionItemOut])
 async def manager_action_items(
     session: AsyncSession = Depends(get_session),
-    _user: AdminUser = Depends(_MANAGER),
+    _user: AdminUser = Depends(_VIEWER),
 ) -> list[ManagerActionItemOut]:
     rows = await AdminDashboardService(session).list_callbacks(limit=100)
     return [
@@ -120,7 +123,7 @@ async def manager_action_items(
 async def manager_recent_calls(
     limit: int = 10,
     session: AsyncSession = Depends(get_session),
-    _user: AdminUser = Depends(_MANAGER),
+    _user: AdminUser = Depends(_VIEWER),
 ) -> list[ManagerCallOut]:
     capped = max(1, min(limit, 50))
     rows = await AdminDashboardService(session).list_calls(limit=capped)
@@ -144,7 +147,7 @@ async def manager_schedule(
     date_from: Optional[str] = Query(None, alias="from"),
     date_to: Optional[str] = Query(None, alias="to"),
     session: AsyncSession = Depends(get_session),
-    _user: AdminUser = Depends(_MANAGER),
+    _user: AdminUser = Depends(_VIEWER),
 ) -> list[AppointmentManagerOut]:
     appts_svc = AppointmentService(session)
     doctors = {d.id: d.full_name for d in await DoctorService(session).list()}
@@ -160,7 +163,7 @@ async def manager_schedule(
 @router.get("/leads", response_model=list[AppointmentManagerOut])
 async def manager_leads(
     session: AsyncSession = Depends(get_session),
-    _user: AdminUser = Depends(_MANAGER),
+    _user: AdminUser = Depends(_VIEWER),
 ) -> list[AppointmentManagerOut]:
     """Online contact-form requests (no slot yet) for staff to call back."""
     leads = await AppointmentService(session).list_leads()
@@ -171,7 +174,7 @@ async def manager_leads(
 @router.get("/doctors", response_model=list[DoctorWorkloadOut])
 async def manager_doctors(
     session: AsyncSession = Depends(get_session),
-    _user: AdminUser = Depends(_MANAGER),
+    _user: AdminUser = Depends(_VIEWER),
 ) -> list[DoctorWorkloadOut]:
     docs = await DoctorService(session).list()
     start = _today_start()
@@ -189,7 +192,7 @@ async def manager_doctors(
 async def manager_reports(
     period: str = Query("today", alias="range"),
     session: AsyncSession = Depends(get_session),
-    _user: AdminUser = Depends(_MANAGER),
+    _user: AdminUser = Depends(_VIEWER),
 ) -> ManagerReportOut:
     period = period if period in ("today", "week", "month") else "today"
     start, end = range_for(period)

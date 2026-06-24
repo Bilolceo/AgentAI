@@ -60,6 +60,34 @@ async def test_schedule_unauth(app_client) -> None:
     assert (await c.get(f"{API}/manager/schedule")).status_code in (401, 403)
 
 
+@pytest.mark.asyncio
+async def test_staff_can_view_but_not_mutate(app_client) -> None:
+    """Read-only staff role: GET dashboard data OK, all writes forbidden (403)."""
+    c, db = app_client
+    # Seed some data as super, then create + log in as staff.
+    await _as_super(c, db)
+    await c.post(f"{API}/manager/seed-demo")
+    appt_id = (await c.get(f"{API}/manager/schedule")).json()[0]["id"]
+
+    await AuthService(db).create_user(
+        email="staff1@clinic.uz", password="staffpw", full_name="Staff", role="staff"
+    )
+    await db.commit()
+    await _login(c, "staff1@clinic.uz", "staffpw")
+
+    # Reads allowed.
+    assert (await c.get(f"{API}/manager/schedule")).status_code == 200
+    assert (await c.get(f"{API}/manager/reports?range=today")).status_code == 200
+    assert (await c.get(f"{API}/manager/doctors")).status_code == 200
+    assert (await c.get(f"{API}/manager/leads")).status_code == 200
+
+    # Writes forbidden.
+    assert (await c.patch(f"{API}/manager/appointments/{appt_id}/status", json={"status": "confirmed"})).status_code == 403
+    assert (await c.delete(f"{API}/manager/appointments/{appt_id}")).status_code == 403
+    assert (await c.post(f"{API}/manager/appointments", json={"service": "x", "status": "confirmed"})).status_code == 403
+    assert (await c.post(f"{API}/manager/doctors", json={"full_name": "D", "specialty": "u"})).status_code == 403
+
+
 # --- seed + schedule + masking ----------------------------------------------
 @pytest.mark.asyncio
 async def test_seed_then_schedule_masked(app_client) -> None:

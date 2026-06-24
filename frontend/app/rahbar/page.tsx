@@ -11,6 +11,7 @@ import {
 } from "@/lib/manager";
 import type { ManagerAppointment, ManagerDoctorWorkload } from "@/lib/types";
 import { useLanguage } from "@/lib/i18n";
+import { getUser } from "@/lib/auth";
 import { Card, CardBody, CardHeader, StatusBadge, Badge, LoadingState, ErrorState } from "@/components/ui";
 import { StatTile, color, statusColor } from "@/components/charts";
 import { WeekCalendar, startOfWeek, addDays, ymd } from "@/components/calendar";
@@ -34,6 +35,12 @@ export default function RahbarHome() {
   const [listFilter, setListFilter] = useState<ListFilter | null>(null);
   const [view, setView] = useState<"agenda" | "calendar">("agenda");
   const [leads, setLeads] = useState<ManagerAppointment[]>([]);
+  // Read-only clinic staff: see the schedule/reports but no action controls.
+  // Resolved after mount to avoid an SSR/client hydration mismatch.
+  const [readOnly, setReadOnly] = useState(false);
+  useEffect(() => {
+    setReadOnly(getUser()?.role === "staff");
+  }, []);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -111,12 +118,14 @@ export default function RahbarHome() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-slate-500">{t("rahbar_home_sub")}</p>
-        <button
-          onClick={() => setShowForm(true)}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700"
-        >
-          <IconPlus width={16} height={16} /> {t("new_appt")}
-        </button>
+        {!readOnly && (
+          <button
+            onClick={() => setShowForm(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700"
+          >
+            <IconPlus width={16} height={16} /> {t("new_appt")}
+          </button>
+        )}
       </div>
       {message && (
         <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">{message}</div>
@@ -135,7 +144,9 @@ export default function RahbarHome() {
       </div>
 
       {/* One clear "needs your action" list: online requests + unconfirmed
-          appointments, each with one-tap confirm / cancel. */}
+          appointments, each with one-tap confirm / cancel. Read-only staff do
+          not get this card (it exists only to take an action). */}
+      {!readOnly && (
       <div id="action-card">
         <Card className="border-amber-300 ring-1 ring-amber-100">
           <CardHeader title={t("rahbar_action_title")} subtitle={t("rahbar_action_hint")} />
@@ -158,6 +169,7 @@ export default function RahbarHome() {
           </CardBody>
         </Card>
       </div>
+      )}
 
       <Card>
         <CardHeader
@@ -236,7 +248,7 @@ export default function RahbarHome() {
 
           {actErr && <p className="mt-3 text-sm text-red-600">{actErr}</p>}
 
-          {["new", "pending", "confirmed", "operator_required"].includes(picked.status) && (
+          {!readOnly && ["new", "pending", "confirmed", "operator_required"].includes(picked.status) && (
             <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
               {["new", "pending", "operator_required"].includes(picked.status) && (
                 <button
@@ -266,15 +278,17 @@ export default function RahbarHome() {
             </div>
           )}
 
-          <div className="mt-3 flex justify-end border-t border-slate-100 pt-3">
-            <button
-              onClick={() => removeAppt(picked.id)}
-              disabled={acting}
-              className="text-xs text-slate-400 hover:text-red-600 disabled:opacity-50"
-            >
-              {t("appt_delete")}
-            </button>
-          </div>
+          {!readOnly && (
+            <div className="mt-3 flex justify-end border-t border-slate-100 pt-3">
+              <button
+                onClick={() => removeAppt(picked.id)}
+                disabled={acting}
+                className="text-xs text-slate-400 hover:text-red-600 disabled:opacity-50"
+              >
+                {t("appt_delete")}
+              </button>
+            </div>
+          )}
         </Modal>
       )}
 

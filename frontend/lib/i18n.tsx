@@ -68,6 +68,8 @@ const DICT: Record<string, Entry> = {
   role_super_admin: { uz: "Bosh administrator", ru: "Главный администратор" },
   role_admin: { uz: "Administrator", ru: "Администратор" },
   role_operator: { uz: "Operator", ru: "Оператор" },
+  role_manager: { uz: "Klinika rahbari", ru: "Директор клиники" },
+  role_staff: { uz: "Xodim (faqat ko'rish)", ru: "Сотрудник (только просмотр)" },
 
   // landing
   home_title: { uz: "Bosh sahifa", ru: "Главная" },
@@ -410,7 +412,10 @@ const DICT: Record<string, Entry> = {
   // --- Rahbar (director) dashboard ---
   rahbar_brand: { uz: "Klinika rahbari", ru: "Директор клиники" },
   rahbar_brand_sub: { uz: "Boshqaruv paneli", ru: "Панель управления" },
+  staff_brand: { uz: "Klinika xodimi", ru: "Сотрудник клиники" },
+  staff_brand_sub: { uz: "Ko'rish paneli", ru: "Панель просмотра" },
   rahbar_title: { uz: "Klinika rahbari paneli", ru: "Панель директора клиники" },
+  staff_title: { uz: "Klinika xodimi paneli", ru: "Панель сотрудника клиники" },
   rahbar_nav_calendar: { uz: "Kalendar", ru: "Календарь" },
   rahbar_nav_reports: { uz: "Hisobotlar", ru: "Отчёты" },
   rahbar_nav_doctors: { uz: "Shifokorlar", ru: "Врачи" },

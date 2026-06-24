@@ -10,8 +10,9 @@ import { IconCalendar, IconChart, IconStethoscope, IconBell, IconLogout, IconExt
 import type { AuthUser } from "@/lib/types";
 
 // Director (rahbar) dashboard - a dedicated, full-screen, non-technical surface
-// for the clinic owner/director. manager / admin / super_admin only.
-const ALLOWED = new Set(["manager", "admin", "super_admin"]);
+// for the clinic owner/director. Read-only clinic staff also land here but
+// without any confirm/cancel/create controls (gated in the pages themselves).
+const ALLOWED = new Set(["manager", "admin", "super_admin", "staff"]);
 
 const NAV = [
   { href: "/rahbar", labelKey: "rahbar_nav_calendar", Icon: IconCalendar },
@@ -86,7 +87,8 @@ export default function RahbarLayout({ children }: { children: React.ReactNode }
   }
 
   const active = NAV.find((n) => isActive(n.href));
-  const pageTitle = pathname === "/rahbar" ? t("rahbar_title") : t(active?.labelKey ?? "rahbar_title");
+  const homeTitle = user.role === "staff" ? "staff_title" : "rahbar_title";
+  const pageTitle = pathname === "/rahbar" ? t(homeTitle) : t(active?.labelKey ?? homeTitle);
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-100 text-slate-900">
@@ -97,8 +99,8 @@ export default function RahbarLayout({ children }: { children: React.ReactNode }
             U
           </div>
           <div className="hidden md:block">
-            <div className="text-sm font-semibold text-white">{t("rahbar_brand")}</div>
-            <div className="text-xs text-slate-400">{t("rahbar_brand_sub")}</div>
+            <div className="text-sm font-semibold text-white">{t(user.role === "staff" ? "staff_brand" : "rahbar_brand")}</div>
+            <div className="text-xs text-slate-400">{t(user.role === "staff" ? "staff_brand_sub" : "rahbar_brand_sub")}</div>
           </div>
         </div>
 
