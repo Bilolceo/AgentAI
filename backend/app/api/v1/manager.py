@@ -12,6 +12,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.clock import clinic_now
 from app.core.db import get_session
 from app.models.admin_user import AdminUser
 from app.models.appointment import Appointment
@@ -40,7 +41,7 @@ _SUPER = require_roles("super_admin")
 
 
 def _today_start() -> datetime:
-    return datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    return clinic_now().replace(hour=0, minute=0, second=0, microsecond=0)
 
 
 def _parse_date(s: Optional[str]) -> Optional[datetime]:
@@ -152,7 +153,7 @@ async def manager_schedule(
         end = (_parse_date(date_to) or start) + timedelta(days=1)
         appts = await appts_svc.list_range(start, end)
     else:
-        appts = await appts_svc.list_day(_parse_date(date) or datetime.now(timezone.utc))
+        appts = await appts_svc.list_day(_parse_date(date) or clinic_now())
     return [_appt_out(a, doctors.get(a.doctor_id) if a.doctor_id else None) for a in appts]
 
 

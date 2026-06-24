@@ -4,10 +4,29 @@ import { useEffect, useState } from "react";
 import { getManagerActionItems, getManagerSchedule } from "@/lib/manager";
 import type { ManagerActionItem, ManagerAppointment } from "@/lib/types";
 import { useLanguage } from "@/lib/i18n";
-import { PageHeader, Card, CardBody, Badge, LoadingState, ErrorState, EmptyState } from "@/components/ui";
+import { Card, CardBody, Badge, LoadingState, ErrorState, EmptyState } from "@/components/ui";
 
 type Priority = "urgent" | "high" | "medium" | "low";
 type Notif = { id: string; typeKey: string; priority: Priority; detail: string };
+
+// Shared with NotificationBell so marking read here also clears the bell badge.
+const SEEN_KEY = "rahbar_seen_notifs";
+
+function loadSeen(): Set<string> {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(SEEN_KEY) || "[]"));
+  } catch {
+    return new Set();
+  }
+}
+
+function saveSeen(s: Set<string>): void {
+  try {
+    localStorage.setItem(SEEN_KEY, JSON.stringify([...s]));
+  } catch {
+    // ignore
+  }
+}
 
 function tone(p: Priority): "danger" | "warning" | "info" | "neutral" {
   return p === "urgent" ? "danger" : p === "high" ? "warning" : p === "medium" ? "info" : "neutral";
@@ -39,6 +58,19 @@ export default function RahbarNotifications() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    setRead(loadSeen());
+  }, []);
+
+  function markRead(ids: string[]) {
+    setRead((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => next.add(id));
+      saveSeen(next);
+      return next;
+    });
+  }
+
+  useEffect(() => {
     Promise.all([getManagerActionItems(), getManagerSchedule({})])
       .then(([items, sched]) => setNotifs(derive(items, sched)))
       .catch((e) => setError(e.message))
@@ -52,17 +84,14 @@ export default function RahbarNotifications() {
 
   return (
     <div className="space-y-4">
-      <PageHeader
-        title={t("mgr_notif_title")}
-        subtitle={`${unread} ${t("mgr_unread")}`}
-        actions={
-          notifs.length > 0 ? (
-            <button className="rounded border border-slate-300 px-3 py-1 text-sm text-slate-700 hover:bg-slate-100" onClick={() => setRead(new Set(notifs.map((n) => n.id)))}>
-              {t("mgr_mark_all_read")}
-            </button>
-          ) : null
-        }
-      />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-slate-500">{unread} {t("mgr_unread")}</p>
+        {notifs.length > 0 && (
+          <button className="rounded-lg border border-slate-300 px-3 py-1 text-sm text-slate-700 hover:bg-slate-100" onClick={() => markRead(notifs.map((n) => n.id))}>
+            {t("mgr_mark_all_read")}
+          </button>
+        )}
+      </div>
       {notifs.length === 0 ? (
         <EmptyState title={t("mgr_notif_empty")} />
       ) : (
@@ -75,7 +104,7 @@ export default function RahbarNotifications() {
                   <span className="font-mono text-sm text-slate-700">{n.detail}</span>
                 </div>
                 {!read.has(n.id) && (
-                  <button className="text-xs text-blue-600 hover:underline" onClick={() => setRead((p) => new Set(p).add(n.id))}>
+                  <button className="text-xs text-blue-600 hover:underline" onClick={() => markRead([n.id])}>
                     {t("mgr_mark_read")}
                   </button>
                 )}

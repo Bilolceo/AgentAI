@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { getManagerDoctors } from "@/lib/manager";
 import type { ManagerDoctorWorkload } from "@/lib/types";
 import { useLanguage } from "@/lib/i18n";
-import { PageHeader, Card, CardBody, CardHeader, Table, TH, TD, TR, Badge, LoadingState, ErrorState, EmptyState } from "@/components/ui";
+import { Card, CardBody, CardHeader, Table, TH, TD, TR, Badge, LoadingState, ErrorState, EmptyState } from "@/components/ui";
 import { HBars } from "@/components/charts";
 
 export default function RahbarDoctors() {
@@ -24,7 +24,7 @@ export default function RahbarDoctors() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title={t("mgr_doctors_title")} subtitle={t("mgr_workload_today")} />
+      <p className="text-sm text-slate-500">{t("mgr_workload_today")}</p>
       {docs.length === 0 ? (
         <EmptyState title={t("mgr_doctors_empty")} hint={t("mgr_gap_doctors")} />
       ) : (

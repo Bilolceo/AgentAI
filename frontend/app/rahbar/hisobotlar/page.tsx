@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { getManagerReports } from "@/lib/manager";
 import type { ManagerReport } from "@/lib/types";
 import { useLanguage } from "@/lib/i18n";
-import { PageHeader, Card, CardBody, CardHeader, LoadingState, ErrorState, EmptyState } from "@/components/ui";
+import { Card, CardBody, CardHeader, LoadingState, ErrorState, EmptyState } from "@/components/ui";
 import { DonutChart, HBars, StatTile, statusColor } from "@/components/charts";
 
 const RANGES = [
@@ -34,18 +34,16 @@ export default function RahbarReports() {
 
   return (
     <div className="space-y-5">
-      <PageHeader
-        title={t("mgr_reports_title")}
-        actions={
-          <div className="inline-flex overflow-hidden rounded border border-slate-300 text-sm">
-            {RANGES.map((r) => (
-              <button key={r.key} onClick={() => setRange(r.key)} className={`px-3 py-1 ${range === r.key ? "bg-blue-600 text-white" : "bg-white text-slate-600 hover:bg-slate-100"}`}>
-                {t(r.labelKey)}
-              </button>
-            ))}
-          </div>
-        }
-      />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-slate-500">{t("mgr_reports_sub")}</p>
+        <div className="inline-flex overflow-hidden rounded-lg border border-slate-300 text-sm">
+          {RANGES.map((r) => (
+            <button key={r.key} onClick={() => setRange(r.key)} className={`px-3 py-1 ${range === r.key ? "bg-indigo-600 text-white" : "bg-white text-slate-600 hover:bg-slate-100"}`}>
+              {t(r.labelKey)}
+            </button>
+          ))}
+        </div>
+      </div>
       {loading ? <LoadingState /> : error ? <ErrorState message={error} /> : !rep ? null : (
         <>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">

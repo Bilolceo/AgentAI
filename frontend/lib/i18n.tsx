@@ -399,6 +399,7 @@ const DICT: Record<string, Entry> = {
 
   // reports
   mgr_reports_title: { uz: "Hisobotlar", ru: "Отчеты" },
+  mgr_reports_sub: { uz: "Davr bo'yicha qabullar tahlili", ru: "Анализ приёмов за период" },
   mgr_rep_action_items: { uz: "Harakat talab qiluvchi elementlar", ru: "Элементы, требующие действий" },
   mgr_rep_note: {
     uz: "Sana bo'yicha (bugun/hafta) hisobotlar Appointment moduli bilan qo'shiladi.",
