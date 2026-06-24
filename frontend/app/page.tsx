@@ -1,29 +1,37 @@
 "use client";
 
-import Link from "next/link";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { getToken, logout, me } from "@/lib/auth";
 import { useLanguage } from "@/lib/i18n";
 
-export default function DashboardPage() {
+// Root is a pure router: it never renders a landing page. Staff are sent to the
+// dashboard for their role; unauthenticated visitors go to the login screen.
+//   manager (clinic director) -> /rahbar
+//   operator / admin / super_admin -> /admin
+// Customers use the public /yozilish link directly (no login required).
+export default function RootRedirect() {
+  const router = useRouter();
   const { t } = useLanguage();
-  return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">{t("home_title")}</h1>
-      <p className="text-slate-600">{t("home_intro")}</p>
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Card title={t("home_card_calls")} href="/admin/calls" hint={t("home_card_calls_hint")} />
-        <Card title={t("home_card_kb")} href="/admin/knowledge-base" hint={t("home_card_kb_hint")} />
-        <Card title={t("home_card_sim")} href="/simulation" hint={t("home_card_sim_hint")} />
-        <Card title={t("home_card_booking")} href="/yozilish" hint={t("home_card_booking_hint")} />
-      </div>
-    </div>
-  );
-}
 
-function Card({ title, href, hint }: { title: string; href: string; hint: string }) {
-  return (
-    <Link href={href} className="rounded-lg border border-slate-200 bg-white p-4 hover:shadow">
-      <div className="font-medium">{title}</div>
-      <div className="mt-1 text-sm text-slate-500">{hint}</div>
-    </Link>
-  );
+  useEffect(() => {
+    if (!getToken()) {
+      router.replace("/login");
+      return;
+    }
+    me()
+      .then((u) => {
+        if (u.force_password_change) {
+          router.replace("/change-password");
+          return;
+        }
+        router.replace(u.role === "manager" ? "/rahbar" : "/admin");
+      })
+      .catch(() => {
+        logout();
+        router.replace("/login");
+      });
+  }, [router]);
+
+  return <p className="text-sm text-slate-500">{t("checking_session")}</p>;
 }
