@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 110" fill="none">
+  <!-- Outer shield -->
+  <path
+    d="M50 4 L90 18 L90 55 C90 78 72 96 50 106 C28 96 10 78 10 55 L10 18 Z"
+    stroke="#14b8a6" stroke-width="5" fill="none" stroke-linejoin="round"
+  />
+  <!-- Inner shield -->
+  <path
+    d="M50 14 L80 25 L80 55 C80 72 67 86 50 95 C33 86 20 72 20 55 L20 25 Z"
+    stroke="#14b8a6" stroke-width="4" fill="none" stroke-linejoin="round"
+  />
+  <!-- H left vertical bar -->
+  <rect x="28" y="32" width="13" height="44" rx="1.5" fill="#14b8a6"/>
+  <!-- H right vertical bar -->
+  <rect x="59" y="32" width="13" height="44" rx="1.5" fill="#14b8a6"/>
+  <!-- H crossbar -->
+  <rect x="28" y="51" width="44" height="10" rx="1.5" fill="#14b8a6"/>
+</svg>
