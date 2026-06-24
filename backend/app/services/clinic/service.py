@@ -1,12 +1,13 @@
 """Doctor + Appointment services (M2). Pure DB logic; no auth (gated at the API)."""
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from typing import Optional
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.clock import clinic_now
 from app.models.appointment import (
     APPOINTMENT_SOURCES,
     APPOINTMENT_STATUSES,
@@ -79,6 +80,15 @@ class AppointmentService:
         await self._s.flush()
         return appt
 
+    async def delete(self, appt_id: int) -> bool:
+        """Hard-delete an appointment (e.g. an erroneous or test entry)."""
+        appt = await self._s.get(Appointment, appt_id)
+        if appt is None:
+            return False
+        await self._s.delete(appt)
+        await self._s.flush()
+        return True
+
     async def set_status(self, appt_id: int, status: str) -> Optional[Appointment]:
         if status not in APPOINTMENT_STATUSES:
             raise ValueError(f"invalid status: {status}")
@@ -142,8 +152,8 @@ class AppointmentService:
 
 
 def range_for(kind: str, now: Optional[datetime] = None) -> tuple[datetime, datetime]:
-    """Date range for 'today' | 'week' | 'month' (UTC day boundaries)."""
-    now = now or datetime.now(timezone.utc)
+    """Date range for 'today' | 'week' | 'month' (clinic-local day boundaries)."""
+    now = now or clinic_now()
     start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     if kind == "week":
         return start, start + timedelta(days=7)

@@ -6,6 +6,7 @@ import {
   getManagerDoctors,
   createManagerAppointment,
   setManagerAppointmentStatus,
+  deleteManagerAppointment,
 } from "@/lib/manager";
 import type { ManagerAppointment, ManagerDoctorWorkload } from "@/lib/types";
 import { useLanguage } from "@/lib/i18n";
@@ -53,6 +54,22 @@ export default function RahbarHome() {
       const updated = await setManagerAppointmentStatus(id, status);
       setPicked(updated);
       setMessage(t("appt_status_updated"));
+      load();
+    } catch (e) {
+      setActErr(e instanceof Error ? e.message : t("error"));
+    } finally {
+      setActing(false);
+    }
+  }
+
+  async function removeAppt(id: number) {
+    if (!window.confirm(t("appt_delete_confirm"))) return;
+    setActing(true);
+    setActErr(null);
+    try {
+      await deleteManagerAppointment(id);
+      setPicked(null);
+      setMessage(t("appt_deleted"));
       load();
     } catch (e) {
       setActErr(e instanceof Error ? e.message : t("error"));
@@ -228,6 +245,16 @@ export default function RahbarHome() {
               </button>
             </div>
           )}
+
+          <div className="mt-3 flex justify-end border-t border-slate-100 pt-3">
+            <button
+              onClick={() => removeAppt(picked.id)}
+              disabled={acting}
+              className="text-xs text-slate-400 hover:text-red-600 disabled:opacity-50"
+            >
+              {t("appt_delete")}
+            </button>
+          </div>
         </Modal>
       )}
 

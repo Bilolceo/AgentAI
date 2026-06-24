@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     app_env: str = "development"
     log_level: str = "INFO"
     public_base_url: str = "http://localhost:8000"
+    # Clinic local timezone offset from UTC (Uzbekistan = +5). Appointment times
+    # are stored as clinic wall-clock; "now" comparisons use this offset.
+    clinic_utc_offset_hours: int = 5
     api_key: str = "change-me-admin-api-key"
     cors_allow_origins: str = "*"  # comma-separated origins for the browser frontend
 

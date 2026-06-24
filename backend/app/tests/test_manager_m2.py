@@ -122,3 +122,16 @@ async def test_create_doctor_and_appointment(app_client) -> None:
     assert appt["doctor_name"] == "Test Doc" and appt["patient_short"] == "Petrov P."
     upd = (await c.patch(f"{API}/manager/appointments/{appt['id']}/status", json={"status": "confirmed"})).json()
     assert upd["status"] == "confirmed"
+
+
+@pytest.mark.asyncio
+async def test_delete_appointment(app_client) -> None:
+    c, db = app_client
+    await _as_super(c, db)
+    doc = (await c.post(f"{API}/manager/doctors", json={"full_name": "Del Doc", "specialty": "urolog"})).json()
+    appt = (await c.post(f"{API}/manager/appointments", json={
+        "service": "Konsultatsiya", "doctor_id": doc["id"], "status": "pending", "source": "web",
+    })).json()
+    assert (await c.delete(f"{API}/manager/appointments/{appt['id']}")).status_code == 204
+    # gone now -> second delete is 404
+    assert (await c.delete(f"{API}/manager/appointments/{appt['id']}")).status_code == 404

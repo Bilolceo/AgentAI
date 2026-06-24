@@ -13,6 +13,7 @@ from typing import Optional
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.clock import clinic_now
 from app.models.appointment import Appointment
 from app.models.doctor import Doctor
 
@@ -148,7 +149,7 @@ class PublicBookingService:
         Empty when the day is outside the booking window, in the past, or a
         non-working day for the doctor.
         """
-        now = datetime.now(timezone.utc)
+        now = clinic_now()
         today = now.replace(hour=0, minute=0, second=0, microsecond=0)
         horizon = today + timedelta(days=MAX_DAYS_AHEAD)
         if day < today or day > horizon:

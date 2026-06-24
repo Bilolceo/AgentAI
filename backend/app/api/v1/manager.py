@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_session
@@ -253,6 +253,20 @@ async def set_appointment_status(
     await session.commit()
     doctor = await DoctorService(session).get(appt.doctor_id) if appt.doctor_id else None
     return _appt_out(appt, doctor.full_name if doctor else None)
+
+
+@router.delete("/appointments/{appt_id}", status_code=204)
+async def delete_appointment(
+    appt_id: int,
+    session: AsyncSession = Depends(get_session),
+    _user: AdminUser = Depends(_MANAGER),
+) -> Response:
+    """Hard-delete an appointment (erroneous/test entry). Manager+ only."""
+    deleted = await AppointmentService(session).delete(appt_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+    await session.commit()
+    return Response(status_code=204)
 
 
 @router.post("/seed-demo")

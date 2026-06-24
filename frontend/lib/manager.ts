@@ -40,6 +40,14 @@ export function setManagerAppointmentStatus(id: number, status: string): Promise
   return patchJSON<ManagerAppointment>(`/manager/appointments/${id}/status`, { status });
 }
 
+export async function deleteManagerAppointment(id: number): Promise<void> {
+  const res = await fetch(`${API_BASE}/manager/appointments/${id}`, {
+    method: "DELETE",
+    headers: authHeader(),
+  });
+  if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+}
+
 export interface NewAppointmentInput {
   service: string;
   doctor_id?: number | null;
