@@ -10,6 +10,7 @@ from app.models.customer import Customer
 from app.models.doctor import Doctor
 from app.models.knowledge import KnowledgeChunk
 from app.models.knowledge_item import KnowledgeItem
+from app.models.notification_log import NotificationLog
 from app.models.telephony_call import TelephonyCall
 from app.models.telephony_stream import TelephonyStream
 from app.models.transcript import Transcript
@@ -26,6 +27,7 @@ __all__ = [
     "Doctor",
     "KnowledgeChunk",
     "KnowledgeItem",
+    "NotificationLog",
     "TelephonyCall",
     "TelephonyStream",
     "Transcript",

@@ -294,6 +294,7 @@ export default function BookingPage() {
             </div>
             <h2 className="text-lg font-semibold text-slate-900">{t("book_success_title")}</h2>
             <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">{t("book_success_sub")}</p>
+            <p className="mx-auto mt-2 max-w-sm text-xs text-slate-400">{t("book_sms_note")}</p>
             <div className="mx-auto mt-4 max-w-xs rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
               <SummaryRow label={t("book_reference")} value={result.reference} />
               <SummaryRow label={t("book_step_doctor")} value={result.doctor_name} />

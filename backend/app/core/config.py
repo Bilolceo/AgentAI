@@ -17,6 +17,15 @@ class Settings(BaseSettings):
     # Clinic local timezone offset from UTC (Uzbekistan = +5). Appointment times
     # are stored as clinic wall-clock; "now" comparisons use this offset.
     clinic_utc_offset_hours: int = 5
+    clinic_display_name: str = "Urologiya klinikasi"
+
+    # Notifications / SMS. Default "mock" = log only, no real send (no creds
+    # needed). Switch to "eskiz" (Uzbekistan) or "twilio" once credentials set.
+    notifications_channel: str = "mock"  # mock | eskiz | twilio
+    eskiz_email: str = ""
+    eskiz_password: str = ""
+    eskiz_base_url: str = "https://notify.eskiz.uz/api"
+    eskiz_sender: str = "4546"  # default Eskiz alphanumeric/short sender
     api_key: str = "change-me-admin-api-key"
     cors_allow_origins: str = "*"  # comma-separated origins for the browser frontend
 

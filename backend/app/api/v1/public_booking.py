@@ -26,6 +26,7 @@ from app.schemas.clinic import (
     PublicSlotsOut,
 )
 from app.services.clinic.booking import BookingError, PublicBookingService, parse_date
+from app.services.notifications.appointment_sms import notify_appointment
 
 router = APIRouter()
 
@@ -107,9 +108,11 @@ async def public_book(
     except BookingError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    await session.commit()
     doctor = await svc.doctors()
     doctor_name = next((d.full_name for d in doctor if d.id == appt.doctor_id), "")
+    # Confirmation that the request was received (best-effort; mock by default).
+    await notify_appointment(session, appt, "booking_received", doctor_name=doctor_name)
+    await session.commit()
     return PublicBookingResult(
         ok=True,
         reference=f"BR-{appt.id:06d}",

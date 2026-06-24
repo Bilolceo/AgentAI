@@ -23,6 +23,7 @@ from app.models.call import Call
 from app.models.callback_task import CallbackTask
 from app.models.customer import Customer
 from app.models.doctor import Doctor
+from app.models.notification_log import NotificationLog
 from app.models.knowledge_item import KnowledgeItem
 from app.models.telephony_call import TelephonyCall
 from app.models.telephony_stream import TelephonyStream
@@ -54,6 +55,7 @@ _TABLES = [
     TelephonyStream.__table__,
     Doctor.__table__,
     Appointment.__table__,
+    NotificationLog.__table__,
 ]
 
 

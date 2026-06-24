@@ -17,3 +17,32 @@ def send_sms(*, to: str, body: str) -> str:
     msg = client.messages.create(to=to, from_=settings.twilio_phone_number, body=body)
     log.info("sms_sent", to=to, sid=msg.sid)
     return msg.sid
+
+
+def send_eskiz(*, to: str, body: str) -> str:
+    """Send an SMS via Eskiz.uz (Uzbekistan). Returns the provider message id.
+
+    httpx is imported lazily so the mock path never requires it. The auth token
+    is fetched per call (low volume); cache it later if needed.
+    """
+    import httpx  # lazy import — only on the real Eskiz path
+
+    base = settings.eskiz_base_url.rstrip("/")
+    mobile = to.lstrip("+")  # Eskiz expects 998XXXXXXXXX
+    with httpx.Client(timeout=15) as client:
+        auth = client.post(
+            f"{base}/auth/login",
+            data={"email": settings.eskiz_email, "password": settings.eskiz_password},
+        )
+        auth.raise_for_status()
+        token = auth.json()["data"]["token"]
+        resp = client.post(
+            f"{base}/message/sms/send",
+            headers={"Authorization": f"Bearer {token}"},
+            data={"mobile_phone": mobile, "message": body, "from": settings.eskiz_sender},
+        )
+        resp.raise_for_status()
+        payload = resp.json()
+        ref = str(payload.get("id") or payload.get("message_id") or "")
+    log.info("eskiz_sms_sent", to=to, ref=ref)
+    return ref

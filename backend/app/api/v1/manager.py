@@ -29,6 +29,7 @@ from app.schemas.manager import ManagerActionItemOut, ManagerCallOut, ManagerSta
 from app.services.admin.dashboard import AdminDashboardService
 from app.services.auth.deps import require_roles
 from app.services.clinic.service import AppointmentService, DoctorService, range_for, short_name
+from app.services.notifications.appointment_sms import notify_appointment
 from app.services.voice.live_call import redact_number
 
 router = APIRouter()
@@ -250,9 +251,13 @@ async def set_appointment_status(
         raise HTTPException(status_code=400, detail=str(exc))
     if appt is None:
         raise HTTPException(status_code=404, detail="Appointment not found")
-    await session.commit()
     doctor = await DoctorService(session).get(appt.doctor_id) if appt.doctor_id else None
-    return _appt_out(appt, doctor.full_name if doctor else None)
+    doctor_name = doctor.full_name if doctor else None
+    # Notify the patient on the status changes they care about (best-effort).
+    if payload.status in ("confirmed", "cancelled"):
+        await notify_appointment(session, appt, payload.status, doctor_name=doctor_name)
+    await session.commit()
+    return _appt_out(appt, doctor_name)
 
 
 @router.delete("/appointments/{appt_id}", status_code=204)

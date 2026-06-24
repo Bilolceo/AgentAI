@@ -648,6 +648,10 @@ const DICT: Record<string, Entry> = {
     uz: "Klinika xodimi qisqa vaqt ichida siz bilan bog'lanib, qabulni tasdiqlaydi.",
     ru: "Сотрудник клиники свяжется с вами в ближайшее время и подтвердит приём.",
   },
+  book_sms_note: {
+    uz: "Tasdiqlangach, telefon raqamingizga SMS xabar yuboriladi.",
+    ru: "После подтверждения на ваш номер телефона придёт SMS.",
+  },
   book_reference: { uz: "So'rov raqami", ru: "Номер заявки" },
   book_status_pending: { uz: "Tasdiq kutilmoqda", ru: "Ожидает подтверждения" },
   book_new_one: { uz: "Yana yozilish", ru: "Записаться снова" },
