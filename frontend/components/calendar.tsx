@@ -29,11 +29,13 @@ export function WeekCalendar({
   appointments,
   dayLabels,
   onPick,
+  statusLabel,
 }: {
   weekStart: Date;
   appointments: ManagerAppointment[];
   dayLabels: string[];
   onPick?: (a: ManagerAppointment) => void;
+  statusLabel?: (status: string) => string;
 }) {
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const todayKey = ymd(new Date());
@@ -76,19 +78,23 @@ export function WeekCalendar({
                 const items = grid[ymd(d)]?.[h] ?? [];
                 return (
                   <div key={i} className="min-h-[46px] border-l border-t border-slate-100 p-1">
-                    {items.map((a) => (
-                      <button
-                        key={a.id}
-                        onClick={() => onPick?.(a)}
-                        className="mb-1 block w-full rounded border-l-4 bg-slate-50 px-1.5 py-1 text-left text-[11px] hover:bg-slate-100"
-                        style={{ borderColor: color(statusColor(a.status)) }}
-                      >
-                        <div className="truncate font-medium text-slate-800">
-                          {a.scheduled_at?.slice(11, 16)} {a.patient_short ?? ""}
-                        </div>
-                        <div className="truncate text-slate-500">{a.doctor_name ?? a.service}</div>
-                      </button>
-                    ))}
+                    {items.map((a) => {
+                      const c = color(statusColor(a.status));
+                      return (
+                        <button
+                          key={a.id}
+                          onClick={() => onPick?.(a)}
+                          title={statusLabel ? statusLabel(a.status) : a.status}
+                          className="mb-1 block w-full rounded border-l-4 px-1.5 py-1 text-left text-[11px] transition hover:brightness-95"
+                          style={{ borderColor: c, backgroundColor: `${c}1a` }}
+                        >
+                          <div className="truncate font-medium text-slate-800">
+                            {a.scheduled_at?.slice(11, 16)} {a.patient_short ?? ""}
+                          </div>
+                          <div className="truncate text-slate-500">{a.doctor_name ?? a.service}</div>
+                        </button>
+                      );
+                    })}
                   </div>
                 );
               })}

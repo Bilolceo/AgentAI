@@ -420,6 +420,15 @@ const DICT: Record<string, Entry> = {
   appt_cancel_appt: { uz: "Bekor qilish", ru: "Отменить" },
   appt_mark_arrived: { uz: "Keldi deb belgilash", ru: "Отметить как пришёл" },
   appt_status_updated: { uz: "Qabul holati yangilandi.", ru: "Статус приёма обновлён." },
+  kpi_week_total: { uz: "Bu hafta jami", ru: "Всего за неделю" },
+  kpi_pending: { uz: "Tasdiq kutmoqda", ru: "Ожидают подтверждения" },
+  rahbar_pending_title: { uz: "Tasdiq kutayotgan so'rovlar", ru: "Заявки, ожидающие подтверждения" },
+  rahbar_pending_hint: { uz: "Onlayn va qo'lda yozilgan, tasdiqlanmagan qabullar", ru: "Онлайн и ручные записи, ожидающие подтверждения" },
+  cal_legend: { uz: "Holatlar", ru: "Статусы" },
+  list_title_all: { uz: "Bu hafta barcha qabullar", ru: "Все приёмы за неделю" },
+  list_title_confirmed: { uz: "Tasdiqlangan qabullar", ru: "Подтверждённые приёмы" },
+  list_title_cancelled: { uz: "Bekor qilingan qabullar", ru: "Отменённые приёмы" },
+  list_empty: { uz: "Bu toifada qabul yo'q.", ru: "В этой категории приёмов нет." },
   rahbar_home_sub: { uz: "Klinika faoliyatining umumiy ko'rinishi", ru: "Общий обзор работы клиники" },
   // week calendar
   cal_this_week: { uz: "Shu hafta", ru: "Эта неделя" },
@@ -714,6 +723,7 @@ const STATUS: Record<string, Entry> = {
   ai_call: { uz: "AI qo'ng'irog'i", ru: "AI звонок" },
   operator: { uz: "Operator", ru: "Оператор" },
   manual: { uz: "Qo'lda", ru: "Вручную" },
+  web: { uz: "Onlayn", ru: "Онлайн" },
 };
 
 // Knowledge-base category codes -> human labels (urology clinic).

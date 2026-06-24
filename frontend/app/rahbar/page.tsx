@@ -4,23 +4,24 @@ import { useCallback, useEffect, useState } from "react";
 import {
   getManagerSchedule,
   getManagerDoctors,
-  getManagerReports,
   createManagerAppointment,
   setManagerAppointmentStatus,
 } from "@/lib/manager";
-import type { ManagerAppointment, ManagerDoctorWorkload, ManagerReport } from "@/lib/types";
+import type { ManagerAppointment, ManagerDoctorWorkload } from "@/lib/types";
 import { useLanguage } from "@/lib/i18n";
 import { Card, CardBody, CardHeader, StatusBadge, Badge, LoadingState, ErrorState } from "@/components/ui";
-import { StatTile } from "@/components/charts";
+import { StatTile, color, statusColor } from "@/components/charts";
 import { WeekCalendar, startOfWeek, addDays, ymd } from "@/components/calendar";
 import { IconPlus } from "@/components/icons";
+
+const LEGEND_STATUSES = ["confirmed", "pending", "cancelled", "arrived", "operator_required"];
+type ListFilter = "all" | "confirmed" | "cancelled";
 
 export default function RahbarHome() {
   const { t, tStatus } = useLanguage();
   const [weekStart, setWeekStart] = useState<Date>(startOfWeek(new Date()));
   const [appts, setAppts] = useState<ManagerAppointment[]>([]);
   const [doctors, setDoctors] = useState<ManagerDoctorWorkload[]>([]);
-  const [report, setReport] = useState<ManagerReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -28,26 +29,7 @@ export default function RahbarHome() {
   const [showForm, setShowForm] = useState(false);
   const [acting, setActing] = useState(false);
   const [actErr, setActErr] = useState<string | null>(null);
-
-  const refreshToday = useCallback(() => {
-    getManagerReports("today").then(setReport).catch(() => setReport(null));
-  }, []);
-
-  async function changeStatus(id: number, status: string) {
-    setActing(true);
-    setActErr(null);
-    try {
-      const updated = await setManagerAppointmentStatus(id, status);
-      setPicked(updated);
-      setMessage(t("appt_status_updated"));
-      load();
-      refreshToday();
-    } catch (e) {
-      setActErr(e instanceof Error ? e.message : t("error"));
-    } finally {
-      setActing(false);
-    }
-  }
+  const [listFilter, setListFilter] = useState<ListFilter | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -61,14 +43,40 @@ export default function RahbarHome() {
   useEffect(load, [load]);
   useEffect(() => {
     getManagerDoctors().then(setDoctors).catch(() => setDoctors([]));
-    getManagerReports("today").then(setReport).catch(() => setReport(null));
   }, []);
+
+  async function changeStatus(id: number, status: string) {
+    setActing(true);
+    setActErr(null);
+    try {
+      const updated = await setManagerAppointmentStatus(id, status);
+      setPicked(updated);
+      setMessage(t("appt_status_updated"));
+      load();
+    } catch (e) {
+      setActErr(e instanceof Error ? e.message : t("error"));
+    } finally {
+      setActing(false);
+    }
+  }
 
   const dayLabels = [
     t("dow_mon"), t("dow_tue"), t("dow_wed"), t("dow_thu"), t("dow_fri"), t("dow_sat"), t("dow_sun"),
   ];
   const weekRange = `${ymd(weekStart)} - ${ymd(addDays(weekStart, 6))}`;
-  const byStatus = report?.by_status ?? {};
+
+  // All KPIs are derived from the loaded week, so they always agree with the
+  // calendar below (no mixing of "today" and "this week" scopes).
+  const isPending = (a: ManagerAppointment) => a.status === "pending" || a.status === "new";
+  const pending = appts.filter(isPending).sort((a, b) => (a.scheduled_at ?? "").localeCompare(b.scheduled_at ?? ""));
+  const confirmedCount = appts.filter((a) => a.status === "confirmed").length;
+  const cancelledCount = appts.filter((a) => a.status === "cancelled").length;
+
+  function listMatch(a: ManagerAppointment, f: ListFilter): boolean {
+    if (f === "confirmed") return a.status === "confirmed";
+    if (f === "cancelled") return a.status === "cancelled";
+    return true;
+  }
 
   return (
     <div className="space-y-5">
@@ -86,11 +94,32 @@ export default function RahbarHome() {
       )}
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatTile label={t("kpi_today_appts")} value={report?.total ?? 0} accent="blue" />
-        <StatTile label={t("kpi_week_appts")} value={appts.length} accent="indigo" />
-        <StatTile label={t("mgr_kpi_confirmed")} value={byStatus["confirmed"] ?? 0} accent="emerald" />
-        <StatTile label={t("mgr_kpi_cancelled")} value={report?.cancelled ?? 0} accent="red" />
+        <KpiButton onClick={() => setListFilter("all")}>
+          <StatTile label={t("kpi_week_total")} value={appts.length} accent="indigo" />
+        </KpiButton>
+        <KpiButton onClick={() => pending.length && document.getElementById("pending-card")?.scrollIntoView({ behavior: "smooth" })}>
+          <StatTile label={t("kpi_pending")} value={pending.length} accent="amber" />
+        </KpiButton>
+        <KpiButton onClick={() => setListFilter("confirmed")}>
+          <StatTile label={t("mgr_kpi_confirmed")} value={confirmedCount} accent="emerald" />
+        </KpiButton>
+        <KpiButton onClick={() => setListFilter("cancelled")}>
+          <StatTile label={t("mgr_kpi_cancelled")} value={cancelledCount} accent="red" />
+        </KpiButton>
       </div>
+
+      {pending.length > 0 && (
+        <div id="pending-card">
+          <Card className="border-amber-300 ring-1 ring-amber-100">
+            <CardHeader title={t("rahbar_pending_title")} subtitle={t("rahbar_pending_hint")} />
+            <CardBody className="space-y-2">
+              {pending.map((a) => (
+                <ApptRow key={a.id} a={a} tStatus={tStatus} onClick={() => setPicked(a)} />
+              ))}
+            </CardBody>
+          </Card>
+        </div>
+      )}
 
       <Card>
         <CardHeader
@@ -112,10 +141,31 @@ export default function RahbarHome() {
           ) : appts.length === 0 ? (
             <div className="p-6 text-center text-sm text-slate-400">{t("cal_empty_week")}</div>
           ) : (
-            <WeekCalendar weekStart={weekStart} appointments={appts} dayLabels={dayLabels} onPick={setPicked} />
+            <WeekCalendar weekStart={weekStart} appointments={appts} dayLabels={dayLabels} onPick={setPicked} statusLabel={tStatus} />
           )}
         </CardBody>
+        {appts.length > 0 && <Legend t={t} tStatus={tStatus} />}
       </Card>
+
+      {listFilter && (
+        <Modal
+          onClose={() => setListFilter(null)}
+          title={t(`list_title_${listFilter}`)}
+        >
+          <div className="space-y-2">
+            {appts.filter((a) => listMatch(a, listFilter)).length === 0 ? (
+              <p className="py-4 text-center text-sm text-slate-400">{t("list_empty")}</p>
+            ) : (
+              appts
+                .filter((a) => listMatch(a, listFilter))
+                .sort((a, b) => (a.scheduled_at ?? "").localeCompare(b.scheduled_at ?? ""))
+                .map((a) => (
+                  <ApptRow key={a.id} a={a} tStatus={tStatus} onClick={() => { setListFilter(null); setPicked(a); }} />
+                ))
+            )}
+          </div>
+        </Modal>
+      )}
 
       {picked && (
         <Modal onClose={() => { setPicked(null); setActErr(null); }} title={`${picked.scheduled_at?.slice(0, 16).replace("T", " ")}`}>
@@ -185,6 +235,61 @@ function Row({ label, value }: { label: string; value: string }) {
     <div className="flex justify-between gap-4 border-b border-slate-100 py-1.5 last:border-0">
       <span className="text-slate-500">{label}</span>
       <span className="font-medium text-slate-800">{value}</span>
+    </div>
+  );
+}
+
+function KpiButton({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button onClick={onClick} className="rounded-lg text-left transition hover:ring-2 hover:ring-indigo-200 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+      {children}
+    </button>
+  );
+}
+
+function ApptRow({
+  a,
+  onClick,
+  tStatus,
+}: {
+  a: ManagerAppointment;
+  onClick: () => void;
+  tStatus: (code?: string | null) => string;
+}) {
+  const when = a.scheduled_at?.slice(0, 16).replace("T", " ") ?? "-";
+  return (
+    <button
+      onClick={onClick}
+      className="flex w-full items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2 text-left text-sm transition hover:border-indigo-400 hover:bg-indigo-50/40"
+    >
+      <div className="min-w-0">
+        <div className="truncate font-medium text-slate-800">{when} · {a.patient_short ?? "-"}</div>
+        <div className="truncate text-xs text-slate-500">{a.doctor_name ?? a.service}</div>
+      </div>
+      <div className="flex shrink-0 items-center gap-1.5">
+        <StatusBadge status={a.status} />
+        <Badge tone="neutral">{tStatus(a.source)}</Badge>
+      </div>
+    </button>
+  );
+}
+
+function Legend({
+  t,
+  tStatus,
+}: {
+  t: (k: string) => string;
+  tStatus: (code?: string | null) => string;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-slate-100 px-4 py-2.5 text-[11px] text-slate-500">
+      <span className="font-medium text-slate-600">{t("cal_legend")}:</span>
+      {LEGEND_STATUSES.map((s) => (
+        <span key={s} className="flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: color(statusColor(s)) }} />
+          {tStatus(s)}
+        </span>
+      ))}
     </div>
   );
 }
