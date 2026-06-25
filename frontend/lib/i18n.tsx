@@ -638,6 +638,7 @@ const DICT: Record<string, Entry> = {
   book_choose_time: { uz: "Bo'sh vaqtni tanlang", ru: "Выберите свободное время" },
   book_doctors_count: { uz: "shifokor", ru: "врач(ей)" },
   book_no_doctors: { uz: "Bu yo'nalishda hozircha shifokor yo'q.", ru: "По этому направлению пока нет врачей." },
+  book_room: { uz: "Xona", ru: "Каб." },
   book_no_slots: {
     uz: "Tanlangan kunda bo'sh vaqt yo'q. Boshqa kunni tanlang.",
     ru: "На выбранный день нет свободного времени. Выберите другой день.",

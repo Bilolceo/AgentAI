@@ -195,7 +195,7 @@ export default function BookingPage() {
                       <span className="block font-medium text-slate-800">{d.full_name}</span>
                       <span className="block text-xs text-slate-400">{tSpec(d.specialty)}</span>
                     </span>
-                    {d.room && <span className="text-xs text-slate-400">{d.room}</span>}
+                    {d.room && <span className="shrink-0 text-xs text-slate-400">{t("book_room")} {d.room}</span>}
                   </button>
                 ))}
               </div>
