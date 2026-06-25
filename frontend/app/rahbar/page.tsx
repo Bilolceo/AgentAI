@@ -65,8 +65,10 @@ export default function RahbarHome() {
     setActing(true);
     setActErr(null);
     try {
-      const updated = await setManagerAppointmentStatus(id, status);
-      setPicked(updated);
+      await setManagerAppointmentStatus(id, status);
+      // Close the detail modal (if open) instead of re-opening it: confirming
+      // should just update the list and show a small success message.
+      setPicked(null);
       setMessage(t("appt_status_updated"));
       load();
       loadLeads();
@@ -233,7 +235,10 @@ export default function RahbarHome() {
       )}
 
       {picked && (
-        <Modal onClose={() => { setPicked(null); setActErr(null); }} title={`${picked.scheduled_at?.slice(0, 16).replace("T", " ")}`}>
+        <Modal
+          onClose={() => { setPicked(null); setActErr(null); }}
+          title={picked.scheduled_at ? picked.scheduled_at.slice(0, 16).replace("T", " ") : (picked.patient_short ?? t("rahbar_details"))}
+        >
           <div className="space-y-2 text-sm">
             <Row label={t("mgr_th_patient")} value={picked.patient_short ?? "-"} />
             <Row label={t("f_phone")} value={picked.phone_masked ?? "-"} />
