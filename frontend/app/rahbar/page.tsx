@@ -206,7 +206,17 @@ export default function RahbarHome() {
           ) : appts.length === 0 ? (
             <div className="p-6 text-center text-sm text-slate-400">{t(view === "agenda" ? "agenda_empty_week" : "cal_empty_week")}</div>
           ) : view === "agenda" ? (
-            <WeekAgenda weekStart={weekStart} appts={appts} dayLabels={dayLabels} t={t} tStatus={tStatus} onPick={setPicked} />
+            <WeekAgenda
+              weekStart={weekStart}
+              appts={appts}
+              dayLabels={dayLabels}
+              t={t}
+              tStatus={tStatus}
+              onPick={setPicked}
+              readOnly={readOnly}
+              acting={acting}
+              onAction={changeStatus}
+            />
           ) : (
             <WeekCalendar weekStart={weekStart} appointments={appts} dayLabels={dayLabels} onPick={setPicked} statusLabel={tStatus} />
           )}
@@ -425,6 +435,78 @@ function Legend({
 
 // Agenda view: appointments grouped by day. Only days that actually have
 // appointments are shown, so there is no wasted empty grid (mobile-friendly).
+// One agenda row: time + patient + status, with inline status-appropriate
+// quick actions (Confirm / Mark arrived / Cancel) so the director acts without
+// opening the detail dialog. Staff (read-only) see no buttons.
+function ScheduleRow({
+  a,
+  t,
+  tStatus,
+  readOnly,
+  acting,
+  onAction,
+  onOpen,
+}: {
+  a: ManagerAppointment;
+  t: (k: string) => string;
+  tStatus: (code?: string | null) => string;
+  readOnly: boolean;
+  acting: boolean;
+  onAction: (id: number, status: string) => void;
+  onOpen: () => void;
+}) {
+  const time = a.scheduled_at ? a.scheduled_at.slice(11, 16) : "-";
+  const canConfirm = ["new", "pending", "operator_required"].includes(a.status);
+  const canArrive = a.status === "confirmed";
+  const canCancel = ["new", "pending", "operator_required", "confirmed"].includes(a.status);
+  const hasActions = !readOnly && (canConfirm || canArrive || canCancel);
+  return (
+    <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+      <button onClick={onOpen} className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition hover:bg-indigo-50/40">
+        <div className="min-w-0">
+          <div className="truncate text-sm font-medium text-slate-800">{time} · {a.patient_short ?? "-"}</div>
+          <div className="truncate text-xs text-slate-500">{a.doctor_name ?? a.service}</div>
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <StatusBadge status={a.status} />
+          <span className="hidden sm:inline-flex"><Badge tone="neutral">{tStatus(a.source)}</Badge></span>
+        </div>
+      </button>
+      {hasActions && (
+        <div className="flex flex-wrap gap-2 border-t border-slate-100 bg-slate-50/60 px-3 py-2">
+          {canConfirm && (
+            <button
+              onClick={() => onAction(a.id, "confirmed")}
+              disabled={acting}
+              className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+            >
+              {t("appt_confirm")}
+            </button>
+          )}
+          {canArrive && (
+            <button
+              onClick={() => onAction(a.id, "arrived")}
+              disabled={acting}
+              className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              {t("appt_mark_arrived")}
+            </button>
+          )}
+          {canCancel && (
+            <button
+              onClick={() => onAction(a.id, "cancelled")}
+              disabled={acting}
+              className="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+            >
+              {t("appt_cancel_appt")}
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function WeekAgenda({
   weekStart,
   appts,
@@ -432,6 +514,9 @@ function WeekAgenda({
   t,
   tStatus,
   onPick,
+  readOnly,
+  acting,
+  onAction,
 }: {
   weekStart: Date;
   appts: ManagerAppointment[];
@@ -439,6 +524,9 @@ function WeekAgenda({
   t: (k: string) => string;
   tStatus: (code?: string | null) => string;
   onPick: (a: ManagerAppointment) => void;
+  readOnly: boolean;
+  acting: boolean;
+  onAction: (id: number, status: string) => void;
 }) {
   const todayKey = ymd(new Date());
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -468,7 +556,16 @@ function WeekAgenda({
             </div>
             <div className="space-y-2">
               {s.items.map((a) => (
-                <ApptRow key={a.id} a={a} tStatus={tStatus} onClick={() => onPick(a)} />
+                <ScheduleRow
+                  key={a.id}
+                  a={a}
+                  t={t}
+                  tStatus={tStatus}
+                  readOnly={readOnly}
+                  acting={acting}
+                  onAction={onAction}
+                  onOpen={() => onPick(a)}
+                />
               ))}
             </div>
           </div>
