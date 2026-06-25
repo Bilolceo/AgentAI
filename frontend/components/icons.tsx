@@ -14,6 +14,22 @@ const base = (p: P) => ({
   ...p,
 });
 
+export function IconMenu(p: P) {
+  return (
+    <svg {...base(p)}>
+      <path d="M3 6h18M3 12h18M3 18h18" />
+    </svg>
+  );
+}
+
+export function IconClose(p: P) {
+  return (
+    <svg {...base(p)}>
+      <path d="M6 6l12 12M18 6L6 18" />
+    </svg>
+  );
+}
+
 export function IconCalendar(p: P) {
   return (
     <svg {...base(p)}>

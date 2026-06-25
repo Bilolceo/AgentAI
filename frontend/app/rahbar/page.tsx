@@ -345,7 +345,9 @@ function ApptRow({
       </div>
       <div className="flex shrink-0 items-center gap-1.5">
         <StatusBadge status={a.status} />
-        <Badge tone="neutral">{tStatus(a.source)}</Badge>
+        {/* Source is secondary info — hide on the narrowest screens so the
+            date/name has room. */}
+        <span className="hidden sm:inline-flex"><Badge tone="neutral">{tStatus(a.source)}</Badge></span>
       </div>
     </button>
   );

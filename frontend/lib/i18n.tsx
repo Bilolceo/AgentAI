@@ -416,6 +416,8 @@ const DICT: Record<string, Entry> = {
   staff_brand_sub: { uz: "Ko'rish paneli", ru: "Панель просмотра" },
   rahbar_title: { uz: "Klinika rahbari paneli", ru: "Панель директора клиники" },
   staff_title: { uz: "Klinika xodimi paneli", ru: "Панель сотрудника клиники" },
+  menu_open: { uz: "Menyu", ru: "Меню" },
+  close: { uz: "Yopish", ru: "Закрыть" },
   rahbar_nav_calendar: { uz: "Kalendar", ru: "Календарь" },
   rahbar_nav_reports: { uz: "Hisobotlar", ru: "Отчёты" },
   rahbar_nav_doctors: { uz: "Shifokorlar", ru: "Врачи" },

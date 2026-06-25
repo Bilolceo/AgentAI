@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { getManagerActionItems, getManagerSchedule } from "@/lib/manager";
 import { useLanguage } from "@/lib/i18n";
+import { IconBell } from "@/components/icons";
 
 type Notif = { id: string; typeKey: string; detail: string };
 
@@ -83,9 +84,11 @@ export function NotificationBell() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((o) => !o)}
-        className="relative rounded border border-slate-300 px-2.5 py-1.5 text-sm text-slate-700 hover:bg-slate-100"
+        aria-label={t("notif_bell")}
+        className="relative flex items-center gap-1.5 rounded border border-slate-300 px-2 py-1.5 text-sm text-slate-700 hover:bg-slate-100 sm:px-2.5"
       >
-        {t("notif_bell")}
+        <IconBell width={18} height={18} />
+        <span className="hidden sm:inline">{t("notif_bell")}</span>
         {unread > 0 && (
           <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-semibold text-white">
             {unread}
